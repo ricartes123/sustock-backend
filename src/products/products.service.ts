@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateProductDto } from './dto/create-product.dto'
+import { UpdateProductDto } from './dto/update-product.dto'
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   private async getBusinessOrThrow(userId: string) {
     const business = await this.prisma.business.findFirst({
@@ -43,4 +44,40 @@ export class ProductsService {
     })
   }
 
+  async findOne(productId: string, userId: string) {
+    const business = await this.getBusinessOrThrow(userId)
+
+    const product = await this.prisma.product.findFirst({
+      where: {
+        id: productId,
+        businessId: business.id,
+      },
+    })
+
+    if (!product) {
+      throw new NotFoundException('Product not found')
+    }
+
+    return product
+  }
+
+  async update(productId: string, data: UpdateProductDto, userId: string) {
+    const business = await this.getBusinessOrThrow(userId)
+
+    const product = await this.prisma.product.findFirst({
+      where: {
+        id: productId,
+        businessId: business.id,
+      },
+    })
+
+    if (!product) {
+      throw new NotFoundException('Product not found')
+    }
+
+    return this.prisma.product.update({
+      where: { id: product.id },
+      data,
+    })
+  }
 }

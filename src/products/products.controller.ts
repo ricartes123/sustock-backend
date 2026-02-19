@@ -1,6 +1,7 @@
-import { Controller, Post, Body, UseGuards, Get } from '@nestjs/common'
+import { Controller, Post, Body, UseGuards, Get, Param, Patch } from '@nestjs/common'
 import { ProductsService } from './products.service'
 import { CreateProductDto } from './dto/create-product.dto'
+import { UpdateProductDto } from './dto/update-product.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { CurrentUser } from '../auth/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
@@ -8,7 +9,7 @@ import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
 @Controller('products')
 @UseGuards(JwtAuthGuard)
 export class ProductsController {
-  constructor(private productsService: ProductsService) {}
+  constructor(private productsService: ProductsService) { }
 
   @Post()
   create(
@@ -21,5 +22,22 @@ export class ProductsController {
   @Get()
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.productsService.findAll(user.userId)
+  }
+
+  @Get(':id')
+  findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.productsService.findOne(id, user.userId)
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() data: UpdateProductDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.productsService.update(id, data, user.userId)
   }
 }
