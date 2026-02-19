@@ -27,6 +27,45 @@ model Business {
   updatedAt DateTime  @updatedAt
 
   owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  products  Product[]
+  movements Movement[]
 
   @@index([ownerId])
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  price     Float
+  stock     Int
+  businessId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business  Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  movements Movement[]
+
+  @@index([businessId])
+}
+
+model Movement {
+  id         String   @id @default(uuid())
+  type       MovementType
+  quantity   Int
+  productId  String
+  businessId String
+  createdAt  DateTime @default(now())
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([businessId])
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
 }
