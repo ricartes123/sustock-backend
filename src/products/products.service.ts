@@ -80,4 +80,25 @@ export class ProductsService {
       data,
     })
   }
+
+  async remove(productId: string, userId: string) {
+    const business = await this.getBusinessOrThrow(userId)
+
+    const product = await this.prisma.product.findFirst({
+      where: {
+        id: productId,
+        businessId: business.id,
+      },
+    })
+
+    if (!product) {
+      throw new NotFoundException('Product not found')
+    }
+
+    await this.prisma.product.delete({
+      where: { id: product.id },
+    })
+
+    return { message: 'Product deleted successfully' }
+  }
 }
