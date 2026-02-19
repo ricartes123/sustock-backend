@@ -2,19 +2,20 @@ import { Controller, Post, Body, UseGuards } from '@nestjs/common'
 import { MovementsService } from './movements.service'
 import { CreateMovementDto } from './dto/create-movement.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { CurrentUser } from '../auth/current-user.decorator'
-import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
+import { BusinessGuard } from '../business-context/business.guard'
+import { CurrentBusiness } from '../business-context/current-business.decorator'
+import type { Business } from '@prisma/client'
 
 @Controller('movements')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, BusinessGuard)
 export class MovementsController {
     constructor(private movementsService: MovementsService) { }
 
     @Post()
     create(
         @Body() data: CreateMovementDto,
-        @CurrentUser() user: AuthenticatedUser,
+        @CurrentBusiness() business: Business,
     ) {
-        return this.movementsService.create(data, user.userId)
+        return this.movementsService.create(data, business.id)
     }
 }

@@ -2,23 +2,19 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateMovementDto } from './dto/create-movement.dto'
 import { MovementType } from '@prisma/client'
-import { BusinessContextService } from '../business-context/business-context.service'
 
 @Injectable()
 export class MovementsService {
     constructor(
         private prisma: PrismaService,
-        private businessContextService: BusinessContextService,
     ) { }
 
-    async create(data: CreateMovementDto, userId: string) {
-        const business = await this.businessContextService.getBusinessOrThrow(userId)
-
+    async create(data: CreateMovementDto, businessId: string) {
         return this.prisma.$transaction(async (tx) => {
             const product = await tx.product.findFirst({
                 where: {
                     id: data.productId,
-                    businessId: business.id,
+                    businessId,
                 },
             })
 
@@ -48,7 +44,7 @@ export class MovementsService {
                     type: data.type,
                     quantity: data.quantity,
                     productId: product.id,
-                    businessId: business.id,
+                    businessId,
                 },
             })
 

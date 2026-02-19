@@ -1,51 +1,61 @@
-import { Controller, Post, Body, UseGuards, Get, Param, Patch, Delete } from '@nestjs/common'
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common'
 import { ProductsService } from './products.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { CurrentUser } from '../auth/current-user.decorator'
-import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
+import { BusinessGuard } from '../business-context/business.guard'
+import { CurrentBusiness } from '../business-context/current-business.decorator'
+import type { Business } from '@prisma/client'
 
 @Controller('products')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, BusinessGuard)
 export class ProductsController {
-  constructor(private productsService: ProductsService) { }
+  constructor(private productsService: ProductsService) {}
 
   @Post()
   create(
     @Body() data: CreateProductDto,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentBusiness() business: Business,
   ) {
-    return this.productsService.create(data, user.userId)
+    return this.productsService.create(data, business.id)
   }
 
   @Get()
-  findAll(@CurrentUser() user: AuthenticatedUser) {
-    return this.productsService.findAll(user.userId)
+  findAll(@CurrentBusiness() business: Business) {
+    return this.productsService.findAll(business.id)
   }
 
   @Get(':id')
   findOne(
     @Param('id') id: string,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentBusiness() business: Business,
   ) {
-    return this.productsService.findOne(id, user.userId)
+    return this.productsService.findOne(id, business.id)
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
     @Body() data: UpdateProductDto,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentBusiness() business: Business,
   ) {
-    return this.productsService.update(id, data, user.userId)
+    return this.productsService.update(id, data, business.id)
   }
 
   @Delete(':id')
   remove(
     @Param('id') id: string,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentBusiness() business: Business,
   ) {
-    return this.productsService.remove(id, user.userId)
+    return this.productsService.remove(id, business.id)
   }
 }

@@ -1,30 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { BusinessContextService } from '../business-context/business-context.service'
 
 @Injectable()
 export class DashboardService {
     constructor(
         private prisma: PrismaService,
-        private businessContextService: BusinessContextService,
     ) { }
 
-    async getOverview(userId: string) {
-        const business = await this.businessContextService.getBusinessOrThrow(userId)
-
+    async getOverview(businessId: string) {
         const totalProducts = await this.prisma.product.count({
-            where: { businessId: business.id },
+            where: { businessId },
         })
 
         const aggregate = await this.prisma.product.aggregate({
-            where: { businessId: business.id },
+            where: { businessId },
             _sum: {
                 stock: true,
             },
         })
 
         const products = await this.prisma.product.findMany({
-            where: { businessId: business.id },
+            where: { businessId },
             select: {
                 price: true,
                 stock: true,
@@ -38,13 +34,13 @@ export class DashboardService {
 
         const lowStockCount = await this.prisma.product.count({
             where: {
-                businessId: business.id,
+                businessId,
                 stock: { lte: 3 },
             },
         })
 
         const totalMovements = await this.prisma.movement.count({
-            where: { businessId: business.id },
+            where: { businessId },
         })
 
         return {

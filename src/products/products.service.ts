@@ -2,46 +2,33 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
-import { BusinessContextService } from '../business-context/business-context.service'
 
 @Injectable()
 export class ProductsService {
-  constructor(
-    private prisma: PrismaService,
-    private businessContextService: BusinessContextService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async create(data: CreateProductDto, userId: string) {
-    const business =
-      await this.businessContextService.getBusinessOrThrow(userId)
-
+  async create(data: CreateProductDto, businessId: string) {
     return this.prisma.product.create({
       data: {
         name: data.name,
         price: data.price,
         stock: data.stock,
-        businessId: business.id,
+        businessId,
       },
     })
   }
 
-  async findAll(userId: string) {
-    const business =
-      await this.businessContextService.getBusinessOrThrow(userId)
-
+  async findAll(businessId: string) {
     return this.prisma.product.findMany({
-      where: { businessId: business.id },
+      where: { businessId },
     })
   }
 
-  async findOne(productId: string, userId: string) {
-    const business =
-      await this.businessContextService.getBusinessOrThrow(userId)
-
+  async findOne(productId: string, businessId: string) {
     const product = await this.prisma.product.findFirst({
       where: {
         id: productId,
-        businessId: business.id,
+        businessId,
       },
     })
 
@@ -52,14 +39,15 @@ export class ProductsService {
     return product
   }
 
-  async update(productId: string, data: UpdateProductDto, userId: string) {
-    const business =
-      await this.businessContextService.getBusinessOrThrow(userId)
-
+  async update(
+    productId: string,
+    data: UpdateProductDto,
+    businessId: string,
+  ) {
     const product = await this.prisma.product.findFirst({
       where: {
         id: productId,
-        businessId: business.id,
+        businessId,
       },
     })
 
@@ -73,14 +61,11 @@ export class ProductsService {
     })
   }
 
-  async remove(productId: string, userId: string) {
-    const business =
-      await this.businessContextService.getBusinessOrThrow(userId)
-
+  async remove(productId: string, businessId: string) {
     const product = await this.prisma.product.findFirst({
       where: {
         id: productId,
-        businessId: business.id,
+        businessId,
       },
     })
 
