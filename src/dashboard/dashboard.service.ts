@@ -8,46 +8,57 @@ export class DashboardService {
     ) { }
 
     async getOverview(businessId: string) {
-        const totalProducts = await this.prisma.product.count({
-            where: { businessId },
-        })
 
-        const aggregate = await this.prisma.product.aggregate({
-            where: { businessId },
-            _sum: {
-                stock: true,
-            },
-        })
+        const business = await this.prisma.business.findUnique({
+            where: { id: businessId },
+            select: { currency: true },
+        });
 
-        const products = await this.prisma.product.findMany({
-            where: { businessId },
-            select: {
-                price: true,
-                stock: true,
-            },
-        })
+        if (!business) {
+            throw new NotFoundException('Business not found');
+        }
 
-        const totalStockValue = products.reduce(
-            (sum, product) => sum + product.price * product.stock,
-            0,
-        )
+        const [
+            totalProducts,
+            lowStockCount,
+            totalMovements,
+            totalStockValueResult
+        ] = await Promise.all([
 
-        const lowStockCount = await this.prisma.product.count({
-            where: {
-                businessId,
-                stock: { lte: 3 },
-            },
-        })
+            this.prisma.product.count({
+                where: { businessId },
+            }),
 
-        const totalMovements = await this.prisma.movement.count({
-            where: { businessId },
-        })
+            this.prisma.product.count({
+                where: {
+                    businessId,
+                    stock: { lte: 3 },
+                },
+            }),
+
+            this.prisma.movement.count({
+                where: { businessId },
+            }),
+
+            this.prisma.$queryRaw<
+                { total: number }[]
+            >`
+                SELECT SUM(price * stock) as total
+                FROM "Product"
+                WHERE "businessId" = ${businessId}
+                `,
+        ]);
+
+        const totalStockValue = Number(
+            totalStockValueResult[0]?.total ?? 0
+        );
 
         return {
+            currency: business.currency,
             totalProducts,
             totalStockValue,
             lowStockCount,
             totalMovements,
-        }
+        };
     }
 }

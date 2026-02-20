@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Delete,
+  Query,
 } from '@nestjs/common'
 import { ProductsService } from './products.service'
 import { CreateProductDto } from './dto/create-product.dto'
@@ -15,11 +16,12 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { BusinessGuard } from '../business-context/business.guard'
 import { CurrentBusiness } from '../business-context/current-business.decorator'
 import type { Business } from '@prisma/client'
+import { PaginationDto } from './dto/pagination.dto'
 
 @Controller('products')
 @UseGuards(JwtAuthGuard, BusinessGuard)
 export class ProductsController {
-  constructor(private productsService: ProductsService) {}
+  constructor(private productsService: ProductsService) { }
 
   @Post()
   create(
@@ -30,8 +32,11 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(@CurrentBusiness() business: Business) {
-    return this.productsService.findAll(business.id)
+  findAll(
+    @CurrentBusiness() business: Business,
+    @Query() pagination: PaginationDto,
+  ) {
+    return this.productsService.findAll(business.id, pagination);
   }
 
   @Get(':id')

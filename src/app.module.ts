@@ -9,9 +9,10 @@ import { MovementsService } from './movements/movements.service';
 import { MovementsModule } from './movements/movements.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { BusinessContextModule } from './business-context/business-context.module';
+import { BusinessModule } from './business/business.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, ProductsModule, MovementsModule, DashboardModule, BusinessContextModule],
+  imports: [AuthModule, PrismaModule, ProductsModule, MovementsModule, DashboardModule, BusinessContextModule, BusinessModule],
   controllers: [AppController, MovementsController],
   providers: [AppService, MovementsService],
 })
