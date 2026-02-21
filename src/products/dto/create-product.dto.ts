@@ -19,4 +19,9 @@ export class CreateProductDto {
   @IsNumber()
   @Min(0)
   stock: number
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  minStock?: number
 }

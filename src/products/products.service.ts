@@ -16,6 +16,7 @@ export class ProductsService {
         barcode: data.barcode,
         price: data.price,
         stock: data.stock,
+        stockMin: data.minStock,
         businessId,
       },
     })
@@ -23,7 +24,7 @@ export class ProductsService {
 
   async findAll(
     businessId: string,
-    { page = 1, limit = 10, search, lowStock }: PaginationDto,
+    { page = 1, limit = 10, search, lowStock, status = 'ACTIVE' }: PaginationDto,
   ) {
 
     const skip = (page - 1) * limit;
@@ -32,23 +33,25 @@ export class ProductsService {
       // Products where stock <= stockMin (raw query required as Prisma findMany can't compare columns)
       const keyword = search ? `%${search}%` : null;
 
+      const isActiveFilter = status === 'ALL' ? '' : (status === 'ACTIVE' ? `AND "isActive" = true` : `AND "isActive" = false`);
+
       const rawQuery = search
         ? this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT * FROM "Product" WHERE "businessId" = $1 AND "isActive" = true AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2) ORDER BY "createdAt" DESC LIMIT $3 OFFSET $4`,
+          `SELECT * FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2) ORDER BY "createdAt" DESC LIMIT $3 OFFSET $4`,
           businessId, keyword, limit, skip
         )
         : this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT * FROM "Product" WHERE "businessId" = $1 AND "isActive" = true AND "stock" <= "stockMin" ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3`,
+          `SELECT * FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3`,
           businessId, limit, skip
         );
 
       const countQuery = search
         ? this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
-          `SELECT COUNT(*) as count FROM "Product" WHERE "businessId" = $1 AND "isActive" = true AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2)`,
+          `SELECT COUNT(*) as count FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2)`,
           businessId, keyword
         )
         : this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
-          `SELECT COUNT(*) as count FROM "Product" WHERE "businessId" = $1 AND "isActive" = true AND "stock" <= "stockMin"`,
+          `SELECT COUNT(*) as count FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin"`,
           businessId
         );
 
@@ -66,7 +69,10 @@ export class ProductsService {
       };
     }
 
-    const whereClause: any = { businessId, isActive: true };
+    const whereClause: any = { businessId };
+    if (status !== 'ALL') {
+      whereClause.isActive = status === 'ACTIVE';
+    }
 
     if (search) {
       whereClause.OR = [
@@ -163,7 +169,15 @@ export class ProductsService {
 
     return this.prisma.product.update({
       where: { id: product.id },
-      data,
+      data: {
+        name: data.name,
+        sku: data.sku,
+        barcode: data.barcode,
+        price: data.price,
+        stock: data.stock,
+        stockMin: data.minStock,
+        isActive: data.isActive
+      },
     })
   }
 
@@ -172,7 +186,6 @@ export class ProductsService {
       where: {
         id: productId,
         businessId,
-        isActive: true,
       },
     })
 

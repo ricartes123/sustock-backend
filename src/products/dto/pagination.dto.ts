@@ -20,4 +20,7 @@ export class PaginationDto {
 
   @IsOptional()
   lowStock?: string;
+
+  @IsOptional()
+  status?: string;
 }
