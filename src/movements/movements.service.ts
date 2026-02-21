@@ -9,12 +9,15 @@ export class MovementsService {
         private prisma: PrismaService,
     ) { }
 
-    async create(data: CreateMovementDto, businessId: string) {
+    async create(data: CreateMovementDto, businessId: string, userId: string) {
         return this.prisma.$transaction(async (tx) => {
 
             if (data.quantity <= 0) {
                 throw new BadRequestException('Quantity must be greater than zero')
             }
+
+            // Lock the product row to prevent race conditions during concurrent movements
+            await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${data.productId}::uuid FOR UPDATE`;
 
             const product = await tx.product.findFirst({
                 where: {
@@ -28,21 +31,19 @@ export class MovementsService {
                 throw new NotFoundException('Active product not found')
             }
 
-            let newStock = product.stock
+            let stockUpdate: Prisma.ProductUpdateInput
 
             if (data.type === MovementType.IN) {
-                newStock += data.quantity
-            }
-
-            if (data.type === MovementType.OUT) {
+                stockUpdate = { stock: { increment: data.quantity } }
+            } else if (data.type === MovementType.OUT) {
                 if (product.stock < data.quantity) {
                     throw new BadRequestException('Insufficient stock')
                 }
-                newStock -= data.quantity
-            }
-
-            if (data.type === MovementType.ADJUSTMENT) {
-                newStock = data.quantity
+                stockUpdate = { stock: { decrement: data.quantity } }
+            } else if (data.type === MovementType.ADJUSTMENT) {
+                stockUpdate = { stock: data.quantity }
+            } else {
+                throw new BadRequestException('Invalid movement type')
             }
 
             const movement = await tx.movement.create({
@@ -52,12 +53,13 @@ export class MovementsService {
                     reason: data.reason,
                     productId: product.id,
                     businessId,
+                    userId,
                 },
             })
 
             await tx.product.update({
                 where: { id: product.id },
-                data: { stock: newStock },
+                data: stockUpdate,
             })
 
             return movement
@@ -154,5 +156,44 @@ export class MovementsService {
                 quantitySoldLast30Days: g._sum.quantity ?? 0,
             }
         })
+    }
+
+    async getLast30DaysSummary(businessId: string) {
+        const last30Days = new Date()
+        last30Days.setDate(last30Days.getDate() - 30)
+
+        const movements = await this.prisma.movement.findMany({
+            where: {
+                businessId,
+                createdAt: { gte: last30Days },
+            },
+            select: {
+                type: true,
+                quantity: true,
+                createdAt: true,
+            },
+        })
+
+        const map = new Map<string, { in: number; out: number }>()
+
+        movements.forEach(m => {
+            const date = m.createdAt.toISOString().split('T')[0]
+
+            if (!map.has(date)) {
+                map.set(date, { in: 0, out: 0 })
+            }
+
+            const entry = map.get(date)!
+
+            if (m.type === 'IN') entry.in += m.quantity
+            if (m.type === 'OUT') entry.out += m.quantity
+        })
+
+        return Array.from(map.entries())
+            .map(([date, values]) => ({
+                date,
+                ...values,
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date))
     }
 } 

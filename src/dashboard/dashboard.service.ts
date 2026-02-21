@@ -8,7 +8,6 @@ export class DashboardService {
     ) { }
 
     async getOverview(businessId: string) {
-
         const business = await this.prisma.business.findUnique({
             where: { id: businessId },
             select: { currency: true },
@@ -20,19 +19,15 @@ export class DashboardService {
 
         const [
             totalProducts,
-            lowStockCount,
             totalMovements,
-            totalStockValueResult
+            totalStockValueResult,
+            lowStockResult,
         ] = await Promise.all([
-
-            this.prisma.product.count({
-                where: { businessId },
-            }),
 
             this.prisma.product.count({
                 where: {
                     businessId,
-                    stock: { lte: 3 },
+                    isActive: true,
                 },
             }),
 
@@ -40,24 +35,27 @@ export class DashboardService {
                 where: { businessId },
             }),
 
-            this.prisma.$queryRaw<
-                { total: number }[]
-            >`
+            this.prisma.$queryRaw<{ total: number }[]>`
                 SELECT SUM(price * stock) as total
                 FROM "Product"
                 WHERE "businessId" = ${businessId}
-                `,
-        ]);
+                AND "isActive" = true
+            `,
 
-        const totalStockValue = Number(
-            totalStockValueResult[0]?.total ?? 0
-        );
+            this.prisma.$queryRaw<{ count: number }[]>`
+                SELECT COUNT(*)::int as count
+                FROM "Product"
+                WHERE "businessId" = ${businessId}
+                AND "isActive" = true
+                AND "stock" <= "stockMin"
+            `,
+        ]);
 
         return {
             currency: business.currency,
             totalProducts,
-            totalStockValue,
-            lowStockCount,
+            totalStockValue: Number(totalStockValueResult[0]?.total ?? 0),
+            lowStockCount: Number(lowStockResult[0]?.count ?? 0),
             totalMovements,
         };
     }

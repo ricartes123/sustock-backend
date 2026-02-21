@@ -12,6 +12,8 @@ export class ProductsService {
     return this.prisma.product.create({
       data: {
         name: data.name,
+        sku: data.sku,
+        barcode: data.barcode,
         price: data.price,
         stock: data.stock,
         businessId,
@@ -29,14 +31,14 @@ export class ProductsService {
     const [products, total] = await Promise.all([
 
       this.prisma.product.findMany({
-        where: { businessId },
+        where: { businessId, isActive: true },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
 
       this.prisma.product.count({
-        where: { businessId },
+        where: { businessId, isActive: true },
       }),
 
     ]);
@@ -58,6 +60,7 @@ export class ProductsService {
       where: {
         id: productId,
         businessId,
+        isActive: true,
       },
     })
 
@@ -77,6 +80,7 @@ export class ProductsService {
       where: {
         id: productId,
         businessId,
+        isActive: true,
       },
     })
 
@@ -95,6 +99,7 @@ export class ProductsService {
       where: {
         id: productId,
         businessId,
+        isActive: true,
       },
     })
 
@@ -102,10 +107,11 @@ export class ProductsService {
       throw new NotFoundException('Product not found')
     }
 
-    await this.prisma.product.delete({
+    await this.prisma.product.update({
       where: { id: product.id },
+      data: { isActive: false },
     })
 
-    return { message: 'Product deleted successfully' }
+    return { message: 'Product successfully archived' }
   }
 }
