@@ -17,4 +17,7 @@ export class PaginationDto {
 
   @IsOptional()
   search?: string;
+
+  @IsOptional()
+  lowStock?: string;
 }
