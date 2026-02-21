@@ -30,6 +30,7 @@ export class AuthService {
         businesses: {
           create: {
             name: data.businessName,
+            currency: data.currency || 'ARS',
           },
         },
       },
