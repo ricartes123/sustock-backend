@@ -10,9 +10,10 @@ import { MovementsModule } from './movements/movements.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { BusinessContextModule } from './business-context/business-context.module';
 import { BusinessModule } from './business/business.module';
+import { TeamModule } from './team/team.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, ProductsModule, MovementsModule, DashboardModule, BusinessContextModule, BusinessModule],
+  imports: [AuthModule, PrismaModule, ProductsModule, MovementsModule, DashboardModule, BusinessContextModule, BusinessModule, TeamModule],
   controllers: [AppController, MovementsController],
   providers: [AppService, MovementsService],
 })

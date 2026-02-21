@@ -11,4 +11,12 @@ export class RegisterDto {
   @IsString()
   @MinLength(2)
   businessName: string
+
+  @IsString()
+  @MinLength(2)
+  firstName: string
+
+  @IsString()
+  @MinLength(2)
+  lastName: string
 }

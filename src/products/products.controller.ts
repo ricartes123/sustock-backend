@@ -47,6 +47,14 @@ export class ProductsController {
     return this.productsService.findOne(id, business.id)
   }
 
+  @Get(':id/movements')
+  getMovements(
+    @Param('id') id: string,
+    @CurrentBusiness() business: Business,
+  ) {
+    return this.productsService.getProductMovements(id, business.id);
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: string,

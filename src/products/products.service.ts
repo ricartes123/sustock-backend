@@ -23,22 +23,32 @@ export class ProductsService {
 
   async findAll(
     businessId: string,
-    { page = 1, limit = 10 }: PaginationDto,
+    { page = 1, limit = 10, search }: PaginationDto,
   ) {
 
     const skip = (page - 1) * limit;
 
+    const whereClause: any = { businessId, isActive: true };
+
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } },
+        { barcode: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
     const [products, total] = await Promise.all([
 
       this.prisma.product.findMany({
-        where: { businessId, isActive: true },
+        where: whereClause,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
 
       this.prisma.product.count({
-        where: { businessId, isActive: true },
+        where: whereClause,
       }),
 
     ]);
@@ -69,6 +79,34 @@ export class ProductsService {
     }
 
     return product
+  }
+
+  async getProductMovements(productId: string, businessId: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { id: productId, businessId, isActive: true },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return this.prisma.movement.findMany({
+      where: {
+        productId,
+        businessId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 
   async update(

@@ -8,18 +8,31 @@ import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
 export class BusinessGuard implements CanActivate {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const user = request.user
 
+    const businessId = request.headers['x-business-id'];
+
+    const whereClause: any = {
+      OR: [
+        { ownerId: user.userId },
+        { teamMembers: { some: { userId: user.userId } } },
+      ],
+    };
+
+    if (businessId) {
+      whereClause.id = businessId;
+    }
+
     const business = await this.prisma.business.findFirst({
-      where: { ownerId: user.userId },
+      where: whereClause,
     })
 
     if (!business) {
-      throw new NotFoundException('Business not found')
+      throw new NotFoundException('Business not found or access denied')
     }
 
     request.business = business

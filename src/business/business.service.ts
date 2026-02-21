@@ -7,7 +7,12 @@ export class BusinessService {
 
   async findAllByUser(userId: string) {
     return this.prisma.business.findMany({
-      where: { ownerId: userId },
+      where: {
+        OR: [
+          { ownerId: userId },
+          { teamMembers: { some: { userId } } },
+        ],
+      },
       select: {
         id: true,
         name: true,

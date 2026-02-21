@@ -22,6 +22,8 @@ export class DashboardService {
             totalMovements,
             totalStockValueResult,
             lowStockResult,
+            recentProducts,
+            recentMovements,
         ] = await Promise.all([
 
             this.prisma.product.count({
@@ -49,6 +51,22 @@ export class DashboardService {
                 AND "isActive" = true
                 AND "stock" <= "stockMin"
             `,
+
+            this.prisma.product.findMany({
+                where: { businessId, isActive: true },
+                orderBy: { createdAt: 'desc' },
+                take: 5,
+            }),
+
+            this.prisma.movement.findMany({
+                where: { businessId },
+                include: {
+                    product: { select: { name: true } },
+                    user: { select: { email: true } },
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 5,
+            })
         ]);
 
         return {
@@ -57,6 +75,8 @@ export class DashboardService {
             totalStockValue: Number(totalStockValueResult[0]?.total ?? 0),
             lowStockCount: Number(lowStockResult[0]?.count ?? 0),
             totalMovements,
+            recentProducts,
+            recentMovements,
         };
     }
 }
