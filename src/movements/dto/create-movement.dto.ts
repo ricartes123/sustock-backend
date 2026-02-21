@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, Min, IsString } from 'class-validator'
+import { IsEnum, IsInt, Min, IsString, IsOptional } from 'class-validator'
 import { MovementType } from '@prisma/client'
 
 export class CreateMovementDto {
@@ -11,4 +11,8 @@ export class CreateMovementDto {
   @IsInt()
   @Min(1)
   quantity: number
+
+  @IsString()
+  @IsOptional()
+  reason?: string
 }

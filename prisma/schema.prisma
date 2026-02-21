@@ -22,7 +22,7 @@ model User {
 model Business {
   id        String    @id @default(uuid())
   name      String
-  currency  String   @default("ARS")
+  currency  String    @default("ARS")
   ownerId   String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -35,34 +35,38 @@ model Business {
 }
 
 model Product {
-  id        String   @id @default(uuid())
-  name      String
-  price     Float
-  stock     Int
+  id         String   @id @default(uuid())
+  name       String
+  price      Decimal  @db.Decimal(10,2)
+  stock      Int
+  stockMin   Int      @default(5)
+  isActive   Boolean  @default(true)
   businessId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  business  Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  movements Movement[]
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  movements  Movement[]
 
   @@index([businessId])
+  @@index([isActive])
 }
 
 model Movement {
-  id         String   @id @default(uuid())
+  id         String        @id @default(uuid())
   type       MovementType
   quantity   Int
+  reason     String?
   productId  String
   businessId String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime      @default(now())
 
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product    Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([businessId])
+  @@index([createdAt])
 }
 
 enum MovementType {
