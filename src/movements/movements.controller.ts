@@ -2,29 +2,29 @@ import { Controller, Post, Body, UseGuards, Get, Query } from '@nestjs/common'
 import { MovementsService } from './movements.service'
 import { CreateMovementDto } from './dto/create-movement.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { BusinessGuard } from '../business-context/business.guard'
-import { CurrentBusiness } from '../business-context/current-business.decorator'
+import { WorkspaceGuard } from '../workspace-context/workspace.guard'
+import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator'
 import { CurrentUser } from '../auth/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
-import type { Business, MovementType } from '@prisma/client'
+import type { Workspace, MovementType } from '@prisma/client'
 
 @Controller('movements')
-@UseGuards(JwtAuthGuard, BusinessGuard)
+@UseGuards(JwtAuthGuard, WorkspaceGuard)
 export class MovementsController {
     constructor(private movementsService: MovementsService) { }
 
     @Post()
     create(
         @Body() data: CreateMovementDto,
-        @CurrentBusiness() business: Business,
+        @CurrentWorkspace() workspace: Workspace,
         @CurrentUser() user: AuthenticatedUser,
     ) {
-        return this.movementsService.create(data, business.id, user.userId)
+        return this.movementsService.create(data, workspace.id, user.userId)
     }
 
     @Get()
     findAll(
-        @CurrentBusiness() business: Business,
+        @CurrentWorkspace() workspace: Workspace,
         @Query('page') page?: number,
         @Query('limit') limit?: number,
         @Query('startDate') startDate?: string,
@@ -32,7 +32,7 @@ export class MovementsController {
         @Query('type') type?: MovementType,
     ) {
         return this.movementsService.findAll(
-            business.id,
+            workspace.id,
             Number(page) || 1,
             Number(limit) || 10,
             startDate ? new Date(startDate) : undefined,
@@ -42,7 +42,7 @@ export class MovementsController {
     }
 
     @Get('summary/last-30-days')
-    async getSummary(@CurrentBusiness() business: Business) {
-        return this.movementsService.getLast30DaysSummary(business.id)
+    async getSummary(@CurrentWorkspace() workspace: Workspace) {
+        return this.movementsService.getLast30DaysSummary(workspace.id)
     }
 }

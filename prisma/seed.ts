@@ -16,7 +16,7 @@ async function main() {
     await prisma.movement.deleteMany()
     await prisma.product.deleteMany()
     await prisma.teamMember.deleteMany()
-    await prisma.business.deleteMany()
+    await prisma.workspace.deleteMany()
     await prisma.user.deleteMany()
 
     // 2. Create standard user and hashed password
@@ -40,8 +40,8 @@ async function main() {
         },
     })
 
-    // 4. Create Business owned by main user
-    const business = await prisma.business.create({
+    // 4. Create Workspace owned by main user
+    const workspace = await prisma.workspace.create({
         data: {
             name: 'TechStore Demo',
             currency: 'USD',
@@ -76,7 +76,7 @@ async function main() {
         const product = await prisma.product.create({
             data: {
                 ...p,
-                businessId: business.id,
+                workspaceId: workspace.id,
             },
         })
         products.push(product)
@@ -96,7 +96,7 @@ async function main() {
         await prisma.movement.create({
             data: {
                 productId: randomProduct.id,
-                businessId: business.id,
+                workspaceId: workspace.id,
                 userId: actor.id,
                 type: randomType,
                 quantity: randomQuantity,

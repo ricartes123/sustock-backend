@@ -27,15 +27,15 @@ export class AuthService {
         password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
-        businesses: {
+        workspaces: {
           create: {
-            name: data.businessName,
+            name: data.workspaceName,
             currency: data.currency || 'ARS',
           },
         },
       },
       include: {
-        businesses: true,
+        workspaces: true,
       },
     })
 
@@ -48,7 +48,7 @@ export class AuthService {
   async login(data: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: data.email },
-      include: { businesses: true },
+      include: { workspaces: true },
     })
 
     if (!user) {

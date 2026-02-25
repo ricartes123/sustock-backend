@@ -7,9 +7,9 @@ import { Role } from '@prisma/client';
 export class TeamService {
     constructor(private prisma: PrismaService) { }
 
-    async listMembers(businessId: string) {
+    async listMembers(workspaceId: string) {
         return this.prisma.teamMember.findMany({
-            where: { businessId },
+            where: { workspaceId },
             include: {
                 user: {
                     select: {
@@ -21,7 +21,7 @@ export class TeamService {
         });
     }
 
-    async inviteMember(businessId: string, data: InviteMemberDto) {
+    async inviteMember(workspaceId: string, data: InviteMemberDto) {
         // Find user by email
         const user = await this.prisma.user.findUnique({
             where: { email: data.email },
@@ -31,41 +31,41 @@ export class TeamService {
             throw new NotFoundException('User with this email not found');
         }
 
-        // Check if member already exists in business team
+        // Check if member already exists in workspace team
         const existingMember = await this.prisma.teamMember.findUnique({
             where: {
-                userId_businessId: {
+                userId_workspaceId: {
                     userId: user.id,
-                    businessId,
+                    workspaceId,
                 },
             },
         });
 
         if (existingMember) {
-            throw new ConflictException('User is already a team member of this business');
+            throw new ConflictException('User is already a team member of this workspace');
         }
 
         // Check if user is owner
-        const business = await this.prisma.business.findUnique({
-            where: { id: businessId },
+        const workspace = await this.prisma.workspace.findUnique({
+            where: { id: workspaceId },
         });
 
-        if (business?.ownerId === user.id) {
-            throw new ConflictException('User is the owner of this business');
+        if (workspace?.ownerId === user.id) {
+            throw new ConflictException('User is the owner of this workspace');
         }
 
         return this.prisma.teamMember.create({
             data: {
                 userId: user.id,
-                businessId,
+                workspaceId,
                 role: data.role || Role.STAFF,
             },
         });
     }
 
-    async removeMember(businessId: string, memberId: string) {
+    async removeMember(workspaceId: string, memberId: string) {
         const member = await this.prisma.teamMember.findFirst({
-            where: { id: memberId, businessId },
+            where: { id: memberId, workspaceId },
         });
 
         if (!member) {

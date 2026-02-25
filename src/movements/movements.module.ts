@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MovementsService } from './movements.service';
 import { MovementsController } from './movements.controller';
-import { BusinessContextModule } from '../business-context/business-context.module';
+import { WorkspaceContextModule } from '../workspace-context/workspace-context.module';
 
 @Module({
   providers: [MovementsService],
   controllers: [MovementsController],
-  imports: [BusinessContextModule],
+  imports: [WorkspaceContextModule],
 })
 export class MovementsModule {}

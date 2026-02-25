@@ -7,14 +7,14 @@ import {
 import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
-export class BusinessGuard implements CanActivate {
+export class WorkspaceGuard implements CanActivate {
   constructor(private prisma: PrismaService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const user = request.user
 
-    const businessId = request.headers['x-business-id'];
+    const workspaceId = request.headers['x-workspace-id'];
 
     const whereClause: any = {
       OR: [
@@ -23,19 +23,19 @@ export class BusinessGuard implements CanActivate {
       ],
     };
 
-    if (businessId) {
-      whereClause.id = businessId;
+    if (workspaceId) {
+      whereClause.id = workspaceId;
     }
 
-    const business = await this.prisma.business.findFirst({
+    const workspace = await this.prisma.workspace.findFirst({
       where: whereClause,
     })
 
-    if (!business) {
-      throw new NotFoundException('Business not found or access denied')
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found or access denied')
     }
 
-    request.business = business
+    request.workspace = workspace
 
     return true
   }

@@ -8,7 +8,7 @@ import { PaginationDto } from './dto/pagination.dto'
 export class ProductsService {
   constructor(private prisma: PrismaService) { }
 
-  async create(data: CreateProductDto, businessId: string) {
+  async create(data: CreateProductDto, workspaceId: string) {
     return this.prisma.product.create({
       data: {
         name: data.name,
@@ -17,13 +17,13 @@ export class ProductsService {
         price: data.price,
         stock: data.stock,
         stockMin: data.minStock,
-        businessId,
+        workspaceId,
       },
     })
   }
 
   async findAll(
-    businessId: string,
+    workspaceId: string,
     { page = 1, limit = 10, search, lowStock, status = 'ACTIVE' }: PaginationDto,
   ) {
 
@@ -37,22 +37,22 @@ export class ProductsService {
 
       const rawQuery = search
         ? this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT * FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2) ORDER BY "createdAt" DESC LIMIT $3 OFFSET $4`,
-          businessId, keyword, limit, skip
+          `SELECT * FROM "Product" WHERE "workspaceId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2) ORDER BY "createdAt" DESC LIMIT $3 OFFSET $4`,
+          workspaceId, keyword, limit, skip
         )
         : this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT * FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3`,
-          businessId, limit, skip
+          `SELECT * FROM "Product" WHERE "workspaceId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3`,
+          workspaceId, limit, skip
         );
 
       const countQuery = search
         ? this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
-          `SELECT COUNT(*) as count FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2)`,
-          businessId, keyword
+          `SELECT COUNT(*) as count FROM "Product" WHERE "workspaceId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2)`,
+          workspaceId, keyword
         )
         : this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
-          `SELECT COUNT(*) as count FROM "Product" WHERE "businessId" = $1 ${isActiveFilter} AND "stock" <= "stockMin"`,
-          businessId
+          `SELECT COUNT(*) as count FROM "Product" WHERE "workspaceId" = $1 ${isActiveFilter} AND "stock" <= "stockMin"`,
+          workspaceId
         );
 
       const [products, countResult] = await Promise.all([rawQuery, countQuery]);
@@ -69,7 +69,7 @@ export class ProductsService {
       };
     }
 
-    const whereClause: any = { businessId };
+    const whereClause: any = { workspaceId };
     if (status !== 'ALL') {
       whereClause.isActive = status === 'ACTIVE';
     }
@@ -106,11 +106,11 @@ export class ProductsService {
   }
 
 
-  async findOne(productId: string, businessId: string) {
+  async findOne(productId: string, workspaceId: string) {
     const product = await this.prisma.product.findFirst({
       where: {
         id: productId,
-        businessId,
+        workspaceId,
         isActive: true,
       },
     })
@@ -122,9 +122,9 @@ export class ProductsService {
     return product
   }
 
-  async getProductMovements(productId: string, businessId: string) {
+  async getProductMovements(productId: string, workspaceId: string) {
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, businessId, isActive: true },
+      where: { id: productId, workspaceId, isActive: true },
     });
 
     if (!product) {
@@ -134,7 +134,7 @@ export class ProductsService {
     return this.prisma.movement.findMany({
       where: {
         productId,
-        businessId,
+        workspaceId,
       },
       include: {
         user: {
@@ -153,12 +153,12 @@ export class ProductsService {
   async update(
     productId: string,
     data: UpdateProductDto,
-    businessId: string,
+    workspaceId: string,
   ) {
     const product = await this.prisma.product.findFirst({
       where: {
         id: productId,
-        businessId,
+        workspaceId,
         isActive: true,
       },
     })
@@ -181,11 +181,11 @@ export class ProductsService {
     })
   }
 
-  async remove(productId: string, businessId: string) {
+  async remove(productId: string, workspaceId: string) {
     const product = await this.prisma.product.findFirst({
       where: {
         id: productId,
-        businessId,
+        workspaceId,
       },
     })
 

@@ -10,7 +10,7 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
-  businessName: string
+  workspaceName: string
 
   @IsString()
   @IsNotEmpty()

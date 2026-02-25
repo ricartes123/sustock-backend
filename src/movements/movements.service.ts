@@ -9,7 +9,7 @@ export class MovementsService {
         private prisma: PrismaService,
     ) { }
 
-    async create(data: CreateMovementDto, businessId: string, userId: string) {
+    async create(data: CreateMovementDto, workspaceId: string, userId: string) {
         return this.prisma.$transaction(async (tx) => {
 
             if (data.quantity <= 0) {
@@ -22,7 +22,7 @@ export class MovementsService {
             const product = await tx.product.findFirst({
                 where: {
                     id: data.productId,
-                    businessId,
+                    workspaceId,
                     isActive: true,
                 },
             })
@@ -52,7 +52,7 @@ export class MovementsService {
                     quantity: data.quantity,
                     reason: data.reason,
                     productId: product.id,
-                    businessId,
+                    workspaceId,
                     userId,
                 },
             })
@@ -67,7 +67,7 @@ export class MovementsService {
     }
 
     async findAll(
-        businessId: string,
+        workspaceId: string,
         page = 1,
         limit = 10,
         startDate?: Date,
@@ -80,7 +80,7 @@ export class MovementsService {
         const skip = (page - 1) * limit
 
         const where: Prisma.MovementWhereInput = {
-            businessId,
+            workspaceId,
         }
 
         if (startDate || endDate) {
@@ -124,14 +124,14 @@ export class MovementsService {
         }
     }
 
-    async getStockRotation(businessId: string) {
+    async getStockRotation(workspaceId: string) {
         const last30Days = new Date()
         last30Days.setDate(last30Days.getDate() - 30)
 
         const grouped = await this.prisma.movement.groupBy({
             by: ['productId'],
             where: {
-                businessId,
+                workspaceId,
                 type: MovementType.OUT,
                 createdAt: { gte: last30Days },
             },
@@ -158,13 +158,13 @@ export class MovementsService {
         })
     }
 
-    async getLast30DaysSummary(businessId: string) {
+    async getLast30DaysSummary(workspaceId: string) {
         const last30Days = new Date()
         last30Days.setDate(last30Days.getDate() - 30)
 
         const movements = await this.prisma.movement.findMany({
             where: {
-                businessId,
+                workspaceId,
                 createdAt: { gte: last30Days },
             },
             select: {

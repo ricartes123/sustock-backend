@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { DashboardController } from './dashboard.controller';
-import { BusinessContextModule } from '../business-context/business-context.module';
+import { WorkspaceContextModule } from '../workspace-context/workspace-context.module';
 
 @Module({
   providers: [DashboardService],
   controllers: [DashboardController],
-  imports: [BusinessContextModule],
+  imports: [WorkspaceContextModule],
 })
 export class DashboardModule {}

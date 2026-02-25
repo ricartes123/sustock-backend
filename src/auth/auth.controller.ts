@@ -34,7 +34,7 @@ export class AuthController {
         email: true,
         firstName: true,
         lastName: true,
-        businesses: {
+        workspaces: {
           select: {
             id: true,
             name: true,
@@ -43,7 +43,7 @@ export class AuthController {
         },
         teamMemberships: {
           include: {
-            business: {
+            workspace: {
               select: {
                 id: true,
                 name: true,

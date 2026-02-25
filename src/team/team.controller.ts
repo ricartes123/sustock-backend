@@ -2,33 +2,33 @@ import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/c
 import { TeamService } from './team.service';
 import { InviteMemberDto } from './dto/invite-member.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { BusinessGuard } from '../business-context/business.guard';
-import { CurrentBusiness } from '../business-context/current-business.decorator';
-import type { Business } from '@prisma/client';
+import { WorkspaceGuard } from '../workspace-context/workspace.guard';
+import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator';
+import type { Workspace } from '@prisma/client';
 
 @Controller('team')
-@UseGuards(JwtAuthGuard, BusinessGuard)
+@UseGuards(JwtAuthGuard, WorkspaceGuard)
 export class TeamController {
     constructor(private readonly teamService: TeamService) { }
 
     @Get()
-    listMembers(@CurrentBusiness() business: Business) {
-        return this.teamService.listMembers(business.id);
+    listMembers(@CurrentWorkspace() workspace: Workspace) {
+        return this.teamService.listMembers(workspace.id);
     }
 
     @Post('invite')
     inviteMember(
-        @CurrentBusiness() business: Business,
+        @CurrentWorkspace() workspace: Workspace,
         @Body() data: InviteMemberDto,
     ) {
-        return this.teamService.inviteMember(business.id, data);
+        return this.teamService.inviteMember(workspace.id, data);
     }
 
     @Delete(':id')
     removeMember(
-        @CurrentBusiness() business: Business,
+        @CurrentWorkspace() workspace: Workspace,
         @Param('id') memberId: string,
     ) {
-        return this.teamService.removeMember(business.id, memberId);
+        return this.teamService.removeMember(workspace.id, memberId);
     }
 }
