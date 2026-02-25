@@ -26,7 +26,12 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  minStock?: number
+  costPrice?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  stockMin?: number
 
   @IsOptional()
   isActive?: boolean

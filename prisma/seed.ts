@@ -59,16 +59,16 @@ async function main() {
 
     // 5. Create 10 Products
     const productsData = [
-        { name: 'Laptop Pro 15"', price: 1200.0, stock: 15, stockMin: 5, sku: 'L-PRO-15', barcode: '1234567890123' },
-        { name: 'Mechanical Keyboard RGB', price: 120.5, stock: 40, stockMin: 10, sku: 'KBD-RGB-01' },
-        { name: 'Wireless Mouse 6000dpi', price: 45.99, stock: 55, stockMin: 15, sku: 'MSE-W-02', barcode: '9876543210987' },
-        { name: '27" 4K Monitor', price: 350.0, stock: 8, stockMin: 10, sku: 'MON-27-4K' },
-        { name: 'USB-C Docking Station', price: 89.99, stock: 25, stockMin: 5, sku: 'DOCK-USBC' },
-        { name: 'Noise Cancelling Headphones', price: 199.99, stock: 3, stockMin: 5, sku: 'HDP-NC-001' },
-        { name: 'HD Webcam 1080p', price: 59.5, stock: 20, stockMin: 5 },
-        { name: 'Smartphone Stand', price: 15.0, stock: 100, stockMin: 20, sku: 'STD-SMT-01' },
-        { name: '1TB NVMe SSD', price: 110.0, stock: 30, stockMin: 10, sku: 'SSD-1TB-NV' },
-        { name: 'Ergonomic Desk Chair', price: 250.0, stock: 5, stockMin: 2 },
+        { name: 'Laptop Pro 15"', price: 1200.0, costPrice: 900.0, stock: 15, stockMin: 5, sku: 'L-PRO-15', barcode: '1234567890123' },
+        { name: 'Mechanical Keyboard RGB', price: 120.5, costPrice: 60.5, stock: 40, stockMin: 10, sku: 'KBD-RGB-01' },
+        { name: 'Wireless Mouse 6000dpi', price: 45.99, costPrice: 20.0, stock: 55, stockMin: 15, sku: 'MSE-W-02', barcode: '9876543210987' },
+        { name: '27" 4K Monitor', price: 350.0, costPrice: 200.0, stock: 8, stockMin: 10, sku: 'MON-27-4K' },
+        { name: 'USB-C Docking Station', price: 89.99, costPrice: 40.0, stock: 25, stockMin: 5, sku: 'DOCK-USBC' },
+        { name: 'Noise Cancelling Headphones', price: 199.99, costPrice: 90.0, stock: 3, stockMin: 5, sku: 'HDP-NC-001' },
+        { name: 'HD Webcam 1080p', price: 59.5, costPrice: 30.0, stock: 20, stockMin: 5 },
+        { name: 'Smartphone Stand', price: 15.0, costPrice: 5.0, stock: 100, stockMin: 20, sku: 'STD-SMT-01' },
+        { name: '1TB NVMe SSD', price: 110.0, costPrice: 60.0, stock: 30, stockMin: 10, sku: 'SSD-1TB-NV' },
+        { name: 'Ergonomic Desk Chair', price: 250.0, costPrice: 100.0, stock: 5, stockMin: 2 },
     ]
 
     const products: any[] = []

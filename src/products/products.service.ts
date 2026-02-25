@@ -14,9 +14,10 @@ export class ProductsService {
         name: data.name,
         sku: data.sku,
         barcode: data.barcode,
+        costPrice: data.costPrice,
         price: data.price,
         stock: data.stock,
-        stockMin: data.minStock,
+        stockMin: data.stockMin,
         workspaceId,
       },
     })
@@ -173,9 +174,10 @@ export class ProductsService {
         name: data.name,
         sku: data.sku,
         barcode: data.barcode,
+        costPrice: data.costPrice,
         price: data.price,
         stock: data.stock,
-        stockMin: data.minStock,
+        stockMin: data.stockMin,
         isActive: data.isActive
       },
     })
