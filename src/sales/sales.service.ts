@@ -116,4 +116,44 @@ export class SalesService {
 
         return sale;
     }
+
+    async remove(id: string, workspaceId: string, userId: string) {
+        return this.prisma.$transaction(async (tx) => {
+            const sale = await tx.sale.findFirst({
+                where: { id, workspaceId },
+                include: { items: true },
+            });
+
+            if (!sale) {
+                throw new NotFoundException('Sale not found');
+            }
+
+            for (const item of sale.items) {
+                // Return stock
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { stock: { increment: item.quantity } },
+                });
+
+                // Generate movement IN
+                await tx.movement.create({
+                    data: {
+                        type: MovementType.IN,
+                        quantity: item.quantity,
+                        reason: 'Anulación de Venta',
+                        productId: item.productId,
+                        workspaceId,
+                        userId,
+                    },
+                });
+            }
+
+            // Delete the sale (items are deleted by cascade depending on schema, let's just delete sale)
+            await tx.sale.delete({
+                where: { id: sale.id },
+            });
+
+            return sale;
+        });
+    }
 }

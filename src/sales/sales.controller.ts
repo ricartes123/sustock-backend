@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, UseGuards } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -30,5 +30,10 @@ export class SalesController {
     @Get(':id')
     findOne(@Param('id') id: string, @CurrentWorkspace() workspace: Workspace) {
         return this.salesService.findOne(id, workspace.id);
+    }
+
+    @Delete(':id')
+    remove(@Param('id') id: string, @CurrentWorkspace() workspace: Workspace, @CurrentUser() user: AuthenticatedUser) {
+        return this.salesService.remove(id, workspace.id, user.userId);
     }
 }
