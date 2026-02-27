@@ -18,7 +18,7 @@ export class SalesService {
 
             for (const item of data.items) {
                 // Lock product row to prevent race conditions
-                await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${item.productId}::uuid FOR UPDATE`;
+                await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${item.productId} FOR UPDATE`;
 
                 const product = await tx.product.findFirst({
                     where: { id: item.productId, workspaceId, isActive: true },
