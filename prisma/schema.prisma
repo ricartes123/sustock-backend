@@ -19,6 +19,7 @@ model User {
   workspaces      Workspace[]
   teamMemberships TeamMember[]
   movements       Movement[]
+  sales           Sale[]
 
   @@index([email])
 }
@@ -35,6 +36,8 @@ model Workspace {
   teamMembers TeamMember[]
   products    Product[]
   movements   Movement[]
+  clients     Client[]
+  sales       Sale[]
 
   @@index([ownerId])
 }
@@ -77,6 +80,7 @@ model Product {
 
   workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   movements Movement[]
+  saleItems SaleItem[]
 
   @@index([workspaceId])
   @@index([isActive])
@@ -100,6 +104,54 @@ model Movement {
   @@index([workspaceId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model Client {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String?
+  email       String?
+  workspaceId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sales     Sale[]
+
+  @@index([workspaceId])
+}
+
+model Sale {
+  id          String   @id @default(uuid())
+  totalAmount Decimal  @db.Decimal(10, 2)
+  clientId    String?
+  workspaceId String
+  userId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client    Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items     SaleItem[]
+
+  @@index([workspaceId])
+  @@index([clientId])
+  @@index([userId])
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([productId])
 }
 
 enum MovementType {

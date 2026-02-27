@@ -11,9 +11,11 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { WorkspaceContextModule } from './workspace-context/workspace-context.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { TeamModule } from './team/team.module';
+import { SalesModule } from './sales/sales.module';
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, ProductsModule, MovementsModule, DashboardModule, WorkspaceContextModule, WorkspaceModule, TeamModule],
+  imports: [AuthModule, PrismaModule, ProductsModule, MovementsModule, DashboardModule, WorkspaceContextModule, WorkspaceModule, TeamModule, SalesModule, ClientsModule],
   controllers: [AppController, MovementsController],
   providers: [AppService, MovementsService],
 })
