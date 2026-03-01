@@ -146,6 +146,7 @@ model SaleItem {
   productId String
   quantity  Int
   price     Decimal @db.Decimal(10, 2)
+  unitCost  Decimal @default(0) @db.Decimal(10, 2)
 
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Restrict)

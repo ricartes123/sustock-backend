@@ -39,6 +39,7 @@ export class SalesService {
                     productId: product.id,
                     quantity: item.quantity,
                     price: product.price,
+                    unitCost: product.costPrice,
                 });
 
                 // Decrement stock
