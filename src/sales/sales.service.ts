@@ -14,7 +14,7 @@ export class SalesService {
 
         return this.prisma.$transaction(async (tx) => {
             let totalAmount = new Prisma.Decimal(0);
-            const saleItemsCreate: any[] = [];
+            const saleItemsCreate: Prisma.SaleItemCreateManySaleInput[] = [];
 
             for (const item of data.items) {
                 // Lock product row to prevent race conditions

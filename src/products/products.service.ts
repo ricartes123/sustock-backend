@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { PaginationDto } from './dto/pagination.dto'
+import { Prisma, Product } from '@prisma/client'
 
 @Injectable()
 export class ProductsService {
@@ -37,11 +38,11 @@ export class ProductsService {
       const isActiveFilter = status === 'ALL' ? '' : (status === 'ACTIVE' ? `AND "isActive" = true` : `AND "isActive" = false`);
 
       const rawQuery = search
-        ? this.prisma.$queryRawUnsafe<any[]>(
+        ? this.prisma.$queryRawUnsafe<Product[]>(
           `SELECT * FROM "Product" WHERE "workspaceId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" AND ("name" ILIKE $2 OR "sku" ILIKE $2 OR "barcode" ILIKE $2) ORDER BY "createdAt" DESC LIMIT $3 OFFSET $4`,
           workspaceId, keyword, limit, skip
         )
-        : this.prisma.$queryRawUnsafe<any[]>(
+        : this.prisma.$queryRawUnsafe<Product[]>(
           `SELECT * FROM "Product" WHERE "workspaceId" = $1 ${isActiveFilter} AND "stock" <= "stockMin" ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3`,
           workspaceId, limit, skip
         );
@@ -70,7 +71,7 @@ export class ProductsService {
       };
     }
 
-    const whereClause: any = { workspaceId };
+    const whereClause: Prisma.ProductWhereInput = { workspaceId };
     if (status !== 'ALL') {
       whereClause.isActive = status === 'ACTIVE';
     }

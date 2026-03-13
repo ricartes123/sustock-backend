@@ -17,7 +17,7 @@ export class MovementsService {
             }
 
             // Lock the product row to prevent race conditions during concurrent movements
-            await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${data.productId}::uuid FOR UPDATE`;
+            await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${data.productId} FOR UPDATE`;
 
             const product = await tx.product.findFirst({
                 where: {

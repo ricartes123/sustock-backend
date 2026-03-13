@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class WorkspaceGuard implements CanActivate {
@@ -16,7 +17,7 @@ export class WorkspaceGuard implements CanActivate {
 
     const workspaceId = request.headers['x-workspace-id'];
 
-    const whereClause: any = {
+    const whereClause: Prisma.WorkspaceWhereInput = {
       OR: [
         { ownerId: user.userId },
         { teamMembers: { some: { userId: user.userId } } },
