@@ -78,7 +78,14 @@ export class SalesService {
                             product: true,
                         },
                     },
-                    client: true,
+                    client: {
+                        select: {
+                            name: true,
+                            phone: true,
+                            email: true,
+                        }
+                    },
+                    user: { select: { firstName: true, lastName: true, email: true } },
                 },
             });
 
@@ -90,7 +97,13 @@ export class SalesService {
         return this.prisma.sale.findMany({
             where: { workspaceId },
             include: {
-                client: true,
+                client: {
+                    select: {
+                        name: true,
+                        phone: true,
+                        email: true,
+                    }
+                },
                 user: { select: { firstName: true, lastName: true, email: true } },
             },
             orderBy: { createdAt: 'desc' },
@@ -106,7 +119,13 @@ export class SalesService {
                         product: true,
                     }
                 },
-                client: true,
+                client: {
+                    select: {
+                        name: true,
+                        phone: true,
+                        email: true,
+                    }
+                },
                 user: { select: { firstName: true, lastName: true, email: true } },
             },
         });
