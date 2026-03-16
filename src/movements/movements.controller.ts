@@ -7,8 +7,9 @@ import { CurrentWorkspace } from '../workspace-context/current-workspace.decorat
 import { CurrentUser } from '../auth/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
 import type { Workspace, MovementType } from '@prisma/client'
+import { APP_ROUTES } from '../app.routes'
 
-@Controller('movements')
+@Controller(APP_ROUTES.MOVEMENTS.ROOT)
 @UseGuards(JwtAuthGuard, WorkspaceGuard)
 export class MovementsController {
     constructor(private movementsService: MovementsService) { }
@@ -41,7 +42,7 @@ export class MovementsController {
         )
     }
 
-    @Get('summary/last-30-days')
+    @Get(APP_ROUTES.MOVEMENTS.SUMMARY_LAST_30_DAYS)
     async getSummary(@CurrentWorkspace() workspace: Workspace) {
         return this.movementsService.getLast30DaysSummary(workspace.id)
     }

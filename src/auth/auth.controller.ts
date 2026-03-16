@@ -6,25 +6,26 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthenticatedUser } from './authenticated-user.interface';
 import { PrismaService } from '../prisma/prisma.service';
+import { APP_ROUTES } from '../app.routes';
 
-@Controller('auth')
+@Controller(APP_ROUTES.AUTH.ROOT)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly prisma: PrismaService,
   ) { }
 
-  @Post('register')
+  @Post(APP_ROUTES.AUTH.REGISTER)
   async register(@Body() data: RegisterDto) {
     return this.authService.register(data);
   }
 
-  @Post('login')
+  @Post(APP_ROUTES.AUTH.LOGIN)
   async login(@Body() data: LoginDto) {
     return this.authService.login(data);
   }
 
-  @Get('me')
+  @Get(APP_ROUTES.AUTH.ME)
   @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser() user: AuthenticatedUser) {
     const fullProfile = await this.prisma.user.findUnique({

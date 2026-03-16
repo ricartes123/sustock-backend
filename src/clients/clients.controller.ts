@@ -5,8 +5,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WorkspaceGuard } from '../workspace-context/workspace.guard';
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator';
 import type { Workspace } from '@prisma/client';
+import { APP_ROUTES } from '../app.routes';
 
-@Controller('clients')
+@Controller(APP_ROUTES.CLIENTS.ROOT)
 @UseGuards(JwtAuthGuard, WorkspaceGuard)
 export class ClientsController {
     constructor(private readonly clientsService: ClientsService) { }
@@ -21,7 +22,7 @@ export class ClientsController {
         return this.clientsService.findAll(workspace.id);
     }
 
-    @Get(':id')
+    @Get(APP_ROUTES.CLIENTS.BY_ID)
     findOne(@Param('id') id: string, @CurrentWorkspace() workspace: Workspace) {
         return this.clientsService.findOne(id, workspace.id);
     }

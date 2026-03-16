@@ -17,8 +17,9 @@ import { WorkspaceGuard } from '../workspace-context/workspace.guard'
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator'
 import type { Workspace } from '@prisma/client'
 import { PaginationDto } from './dto/pagination.dto'
+import { APP_ROUTES } from '../app.routes'
 
-@Controller('products')
+@Controller(APP_ROUTES.PRODUCTS.ROOT)
 @UseGuards(JwtAuthGuard, WorkspaceGuard)
 export class ProductsController {
   constructor(private productsService: ProductsService) { }
@@ -39,7 +40,7 @@ export class ProductsController {
     return this.productsService.findAll(workspace.id, pagination);
   }
 
-  @Get(':id')
+  @Get(APP_ROUTES.PRODUCTS.BY_ID)
   findOne(
     @Param('id') id: string,
     @CurrentWorkspace() workspace: Workspace,
@@ -47,7 +48,7 @@ export class ProductsController {
     return this.productsService.findOne(id, workspace.id)
   }
 
-  @Get(':id/movements')
+  @Get(APP_ROUTES.PRODUCTS.MOVEMENTS)
   getMovements(
     @Param('id') id: string,
     @CurrentWorkspace() workspace: Workspace,
@@ -55,7 +56,7 @@ export class ProductsController {
     return this.productsService.getProductMovements(id, workspace.id);
   }
 
-  @Patch(':id')
+  @Patch(APP_ROUTES.PRODUCTS.BY_ID)
   update(
     @Param('id') id: string,
     @Body() data: UpdateProductDto,
@@ -64,7 +65,7 @@ export class ProductsController {
     return this.productsService.update(id, data, workspace.id)
   }
 
-  @Delete(':id')
+  @Delete(APP_ROUTES.PRODUCTS.BY_ID)
   remove(
     @Param('id') id: string,
     @CurrentWorkspace() workspace: Workspace,

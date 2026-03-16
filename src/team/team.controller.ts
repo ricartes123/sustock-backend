@@ -5,8 +5,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WorkspaceGuard } from '../workspace-context/workspace.guard';
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator';
 import type { Workspace } from '@prisma/client';
+import { APP_ROUTES } from '../app.routes';
 
-@Controller('team')
+@Controller(APP_ROUTES.TEAM.ROOT)
 @UseGuards(JwtAuthGuard, WorkspaceGuard)
 export class TeamController {
     constructor(private readonly teamService: TeamService) { }
@@ -16,7 +17,7 @@ export class TeamController {
         return this.teamService.listMembers(workspace.id);
     }
 
-    @Post('invite')
+    @Post(APP_ROUTES.TEAM.INVITE)
     inviteMember(
         @CurrentWorkspace() workspace: Workspace,
         @Body() data: InviteMemberDto,
@@ -24,7 +25,7 @@ export class TeamController {
         return this.teamService.inviteMember(workspace.id, data);
     }
 
-    @Delete(':id')
+    @Delete(APP_ROUTES.TEAM.BY_ID)
     removeMember(
         @CurrentWorkspace() workspace: Workspace,
         @Param('id') memberId: string,

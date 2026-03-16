@@ -4,8 +4,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { WorkspaceGuard } from '../workspace-context/workspace.guard'
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator'
 import type { Workspace } from '@prisma/client'
+import { APP_ROUTES } from '../app.routes'
 
-@Controller('dashboard')
+@Controller(APP_ROUTES.DASHBOARD.ROOT)
 @UseGuards(JwtAuthGuard, WorkspaceGuard)
 export class DashboardController {
     constructor(private dashboardService: DashboardService) { }

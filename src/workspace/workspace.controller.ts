@@ -5,8 +5,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { APP_ROUTES } from '../app.routes';
 
-@Controller('workspaces')
+@Controller(APP_ROUTES.WORKSPACE.ROOT)
 @UseGuards(JwtAuthGuard)
 export class WorkspaceController {
   constructor(private workspaceService: WorkspaceService) { }
@@ -16,7 +17,7 @@ export class WorkspaceController {
     return this.workspaceService.findAllByUser(user.userId);
   }
 
-  @Patch(':id/currency')
+  @Patch(APP_ROUTES.WORKSPACE.CURRENCY)
   updateCurrency(
     @Param('id') id: string,
     @Body() dto: UpdateCurrencyDto,
