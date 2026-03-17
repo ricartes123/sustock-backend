@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Query } from '@nestjs/common'
+import { Controller, Post, Body, UseGuards, Get, Query, Param } from '@nestjs/common'
 import { MovementsService } from './movements.service'
 import { CreateMovementDto } from './dto/create-movement.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
@@ -45,5 +45,13 @@ export class MovementsController {
     @Get(APP_ROUTES.MOVEMENTS.SUMMARY_LAST_30_DAYS)
     async getSummary(@CurrentWorkspace() workspace: Workspace) {
         return this.movementsService.getLast30DaysSummary(workspace.id)
+    }
+
+    @Get(APP_ROUTES.MOVEMENTS.BY_PRODUCT)
+    getMovementsByProduct(
+        @Param('productId') productId: string,
+        @CurrentWorkspace() workspace: Workspace,
+    ) {
+        return this.movementsService.findByProduct(productId, workspace.id);
     }
 }

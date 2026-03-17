@@ -48,14 +48,6 @@ export class ProductsController {
     return this.productsService.findOne(id, workspace.id)
   }
 
-  @Get(APP_ROUTES.PRODUCTS.MOVEMENTS)
-  getMovements(
-    @Param('id') id: string,
-    @CurrentWorkspace() workspace: Workspace,
-  ) {
-    return this.productsService.getProductMovements(id, workspace.id);
-  }
-
   @Patch(APP_ROUTES.PRODUCTS.BY_ID)
   update(
     @Param('id') id: string,

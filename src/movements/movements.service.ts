@@ -196,4 +196,32 @@ export class MovementsService {
             }))
             .sort((a, b) => a.date.localeCompare(b.date))
     }
+
+    async findByProduct(productId: string, workspaceId: string) {
+        const product = await this.prisma.product.findFirst({
+            where: { id: productId, workspaceId, isActive: true },
+        });
+
+        if (!product) {
+            throw new NotFoundException('Product not found');
+        }
+
+        return this.prisma.movement.findMany({
+            where: {
+                productId,
+                workspaceId,
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+    }
 } 

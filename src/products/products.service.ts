@@ -124,34 +124,6 @@ export class ProductsService {
     return product
   }
 
-  async getProductMovements(productId: string, workspaceId: string) {
-    const product = await this.prisma.product.findFirst({
-      where: { id: productId, workspaceId, isActive: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    return this.prisma.movement.findMany({
-      where: {
-        productId,
-        workspaceId,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
-
   async update(
     productId: string,
     data: UpdateProductDto,
