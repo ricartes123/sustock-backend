@@ -51,7 +51,14 @@ export class MovementsController {
     getMovementsByProduct(
         @Param('productId') productId: string,
         @CurrentWorkspace() workspace: Workspace,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ) {
-        return this.movementsService.findByProduct(productId, workspace.id);
+        return this.movementsService.findByProduct(
+            productId, 
+            workspace.id,
+            Number(page) || 1,
+            Number(limit) || 10
+        );
     }
 }

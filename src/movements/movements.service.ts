@@ -197,7 +197,12 @@ export class MovementsService {
             .sort((a, b) => a.date.localeCompare(b.date))
     }
 
-    async findByProduct(productId: string, workspaceId: string) {
+    async findByProduct(productId: string, workspaceId: string, page = 1, limit = 10) {
+        limit = Math.min(limit, 100)
+        page = Math.max(page, 1)
+
+        const skip = (page - 1) * limit
+
         const product = await this.prisma.product.findFirst({
             where: { id: productId, workspaceId, isActive: true },
         });
@@ -206,22 +211,44 @@ export class MovementsService {
             throw new NotFoundException('Product not found');
         }
 
-        return this.prisma.movement.findMany({
-            where: {
-                productId,
-                workspaceId,
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        email: true,
+        const [data, total] = await this.prisma.$transaction([
+            this.prisma.movement.findMany({
+                where: {
+                    productId,
+                    workspaceId,
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                        }
                     }
+                },
+                orderBy: {
+                    createdAt: 'desc',
+                },
+                skip,
+                take: limit,
+            }),
+            this.prisma.movement.count({
+                where: {
+                    productId,
+                    workspaceId,
                 }
+            }),
+        ]);
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                lastPage: Math.ceil(total / limit),
+                totalPages: Math.ceil(total / limit),
             },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
+        }
     }
 } 
