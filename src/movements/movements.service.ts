@@ -106,6 +106,12 @@ export class MovementsService {
                     product: {
                         select: { name: true },
                     },
+                    user: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                        }
+                    }
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
@@ -224,6 +230,19 @@ export class MovementsService {
                             firstName: true,
                             lastName: true,
                         }
+                    },
+                    sale: {
+                        select: {
+                            id: true,
+                            totalAmount: true,
+                            client: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                }
+                            },
+                            createdAt: true,
+                        }
                     }
                 },
                 orderBy: {
@@ -232,6 +251,7 @@ export class MovementsService {
                 skip,
                 take: limit,
             }),
+
             this.prisma.movement.count({
                 where: {
                     productId,
@@ -246,7 +266,6 @@ export class MovementsService {
                 total,
                 page,
                 limit,
-                lastPage: Math.ceil(total / limit),
                 totalPages: Math.ceil(total / limit),
             },
         }

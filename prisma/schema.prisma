@@ -94,11 +94,13 @@ model Movement {
   productId   String
   workspaceId String
   userId      String?
+  saleId      String?
   createdAt   DateTime     @default(now())
 
   product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sale      Sale?     @relation(fields: [saleId], references: [id], onDelete: SetNull)
 
   @@index([productId])
   @@index([workspaceId])
@@ -127,6 +129,7 @@ model Sale {
   clientId    String?
   workspaceId String
   userId      String?
+  movements   Movement[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

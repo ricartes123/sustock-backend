@@ -16,6 +16,31 @@ export class SalesService {
             let totalAmount = new Prisma.Decimal(0);
             const saleItemsCreate: Prisma.SaleItemCreateManySaleInput[] = [];
 
+            // Record the sale
+            const sale = await tx.sale.create({
+                data: {
+                    totalAmount,
+                    clientId: data.clientId || null,
+                    workspaceId,
+                    userId,
+                },
+                include: {
+                    items: {
+                        include: {
+                            product: true,
+                        },
+                    },
+                    client: {
+                        select: {
+                            name: true,
+                            phone: true,
+                            email: true,
+                        }
+                    },
+                    user: { select: { firstName: true, lastName: true, email: true } },
+                },
+            });
+
             for (const item of data.items) {
                 // Lock product row to prevent race conditions
                 await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${item.productId} FOR UPDATE`;
@@ -57,35 +82,19 @@ export class SalesService {
                         productId: product.id,
                         workspaceId,
                         userId,
+                        saleId: sale.id,
                     },
                 });
             }
 
-            // Record the sale
-            const sale = await tx.sale.create({
+            // Update sale total amount
+            await tx.sale.update({
+                where: { id: sale.id },
                 data: {
                     totalAmount,
-                    clientId: data.clientId || null,
-                    workspaceId,
-                    userId,
                     items: {
-                        create: saleItemsCreate,
-                    },
-                },
-                include: {
-                    items: {
-                        include: {
-                            product: true,
-                        },
-                    },
-                    client: {
-                        select: {
-                            name: true,
-                            phone: true,
-                            email: true,
-                        }
-                    },
-                    user: { select: { firstName: true, lastName: true, email: true } },
+                        create: saleItemsCreate
+                    }
                 },
             });
 
