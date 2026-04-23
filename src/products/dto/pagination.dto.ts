@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min } from 'class-validator';
+import { IsOptional, IsInt, Min, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PaginationDto {
@@ -22,5 +22,6 @@ export class PaginationDto {
   lowStock?: string;
 
   @IsOptional()
+  @IsIn(['ALL', 'ACTIVE', 'ARCHIVED'])
   status?: string;
 }
