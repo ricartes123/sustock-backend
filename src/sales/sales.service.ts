@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
-import { MovementType, Prisma } from '@prisma/client';
+import { MovementType, SaleStatus, Prisma } from '@prisma/client';
 import { PaginationDto } from '../products/dto/pagination.dto';
 
 @Injectable()
@@ -167,14 +167,16 @@ export class SalesService {
                 throw new NotFoundException('Sale not found');
             }
 
+            if (sale.status === SaleStatus.CANCELLED) {
+                throw new BadRequestException('Sale is already cancelled');
+            }
+
             for (const item of sale.items) {
-                // Return stock
                 await tx.product.update({
                     where: { id: item.productId },
                     data: { stock: { increment: item.quantity } },
                 });
 
-                // Generate movement IN
                 await tx.movement.create({
                     data: {
                         type: MovementType.IN,
@@ -183,16 +185,18 @@ export class SalesService {
                         productId: item.productId,
                         workspaceId,
                         userId,
+                        saleId: sale.id,
                     },
                 });
             }
 
-            // Delete the sale (items are deleted by cascade depending on schema, let's just delete sale)
-            await tx.sale.delete({
+            return tx.sale.update({
                 where: { id: sale.id },
+                data: {
+                    status: SaleStatus.CANCELLED,
+                    cancelledAt: new Date(),
+                },
             });
-
-            return sale;
         });
     }
 

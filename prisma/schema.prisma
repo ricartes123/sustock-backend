@@ -125,14 +125,16 @@ model Client {
 }
 
 model Sale {
-  id          String   @id @default(uuid())
-  totalAmount Decimal  @db.Decimal(10, 2)
+  id          String     @id @default(uuid())
+  totalAmount Decimal    @db.Decimal(10, 2)
+  status      SaleStatus @default(ACTIVE)
+  cancelledAt DateTime?
   clientId    String?
   workspaceId String
   userId      String?
   movements   Movement[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   client    Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
   workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -142,6 +144,12 @@ model Sale {
   @@index([workspaceId])
   @@index([clientId])
   @@index([userId])
+  @@index([status])
+}
+
+enum SaleStatus {
+  ACTIVE
+  CANCELLED
 }
 
 model SaleItem {
