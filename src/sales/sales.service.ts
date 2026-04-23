@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { MovementType, Prisma } from '@prisma/client';
+import { PaginationDto } from '../products/dto/pagination.dto';
 
 @Injectable()
 export class SalesService {
@@ -184,5 +185,53 @@ export class SalesService {
 
             return sale;
         });
+    }
+
+    async findOneClient(clientId: string, workspaceId: string, { page = 1, limit = 10 }: PaginationDto) {
+        const skip = (page - 1) * limit;
+        const whereClause: Prisma.SaleWhereInput = { workspaceId, clientId };
+
+        const [sales, total, stats] = await Promise.all([
+            this.prisma.sale.findMany({
+                where: whereClause,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    items: {
+                        include: {
+                            product: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    barcode: true,
+                                }
+                            }
+                        }
+                    },
+                    user: { select: { firstName: true, lastName: true, email: true } },
+                },
+            }),
+            this.prisma.sale.count({
+                where: whereClause,
+            }),
+            this.prisma.sale.aggregate({
+                where: whereClause,
+                _sum: { totalAmount: true },
+                _avg: { totalAmount: true }
+            })
+        ]);
+
+        return {
+            data: sales,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                totalAmount: stats._sum.totalAmount || 0,
+                averageTicket: stats._avg.totalAmount || 0
+            },
+        };
     }
 }
