@@ -103,21 +103,30 @@ export class SalesService {
         });
     }
 
-    async findAll(workspaceId: string) {
-        return this.prisma.sale.findMany({
-            where: { workspaceId },
-            include: {
-                client: {
-                    select: {
-                        name: true,
-                        phone: true,
-                        email: true,
-                    }
+    async findAll(workspaceId: string, { page = 1, limit = 10 }: PaginationDto = {}) {
+        const skip = (page - 1) * limit;
+        const whereClause: Prisma.SaleWhereInput = { workspaceId };
+
+        const [sales, total] = await Promise.all([
+            this.prisma.sale.findMany({
+                where: whereClause,
+                skip,
+                take: limit,
+                include: {
+                    client: {
+                        select: { name: true, phone: true, email: true },
+                    },
+                    user: { select: { firstName: true, lastName: true, email: true } },
                 },
-                user: { select: { firstName: true, lastName: true, email: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.sale.count({ where: whereClause }),
+        ]);
+
+        return {
+            data: sales,
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+        };
     }
 
     async findOne(id: string, workspaceId: string) {

@@ -25,8 +25,8 @@ export class SalesController {
     }
 
     @Get()
-    findAll(@CurrentWorkspace() workspace: Workspace) {
-        return this.salesService.findAll(workspace.id);
+    findAll(@CurrentWorkspace() workspace: Workspace, @Query() pagination: PaginationDto) {
+        return this.salesService.findAll(workspace.id, pagination);
     }
 
     @Get(APP_ROUTES.SALES.BY_ID)
