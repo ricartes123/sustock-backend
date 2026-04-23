@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { PaginationDto } from '../products/dto/pagination.dto';
 import { CreateClientDto } from './dto/create-client.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 
 @Injectable()
 export class ClientsService {
@@ -67,7 +68,7 @@ export class ClientsService {
         return client;
     }
 
-    async update(id: string, data: any, workspaceId: string) {
+    async update(id: string, data: UpdateClientDto, workspaceId: string) {
         const client = await this.prisma.client.findFirst({
             where: { id, workspaceId, isActive: true },
         });

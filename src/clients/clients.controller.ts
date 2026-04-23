@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Param, UseGuards, Query, Patch, Delete } from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WorkspaceGuard } from '../workspace-context/workspace.guard';
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator';
@@ -34,7 +35,7 @@ export class ClientsController {
     @Patch(APP_ROUTES.CLIENTS.BY_ID)
     update(
         @Param('id') id: string,
-        @Body() updateClientDto: any,
+        @Body() updateClientDto: UpdateClientDto,
         @CurrentWorkspace() workspace: Workspace,
     ) {
         return this.clientsService.update(id, updateClientDto, workspace.id);
