@@ -1,98 +1,212 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# SuStock — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST del sistema de gestión de inventario **SuStock**. Construida con NestJS y PostgreSQL, provee autenticación JWT, aislamiento multi-tenant por espacio de trabajo, y endpoints transaccionales para productos, ventas, movimientos de stock y clientes.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Stack tecnológico
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Tecnología | Versión | Uso |
+|---|---|---|
+| Node.js | ≥ 22 | Runtime |
+| NestJS | 11 | Framework HTTP |
+| TypeScript | 5.7 | Lenguaje |
+| Prisma | 7 | ORM + migraciones |
+| PostgreSQL | 17 | Base de datos |
+| `@prisma/adapter-pg` | 7 | Pool de conexiones vía `pg` |
+| Passport + JWT | — | Autenticación |
+| class-validator | 0.14 | Validación de DTOs |
+| bcrypt | 6 | Hash de contraseñas |
+| Jest | 30 | Tests |
 
-## Project setup
+---
 
-```bash
-$ npm install
-```
+## Prerequisitos
 
-## Compile and run the project
+- **Node.js** ≥ 22 ([descargar](https://nodejs.org))
+- **npm** ≥ 10
+- **PostgreSQL** 17 corriendo localmente, o **Docker** + **Docker Compose**
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## Variables de entorno
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
+Crear un archivo `.env` en la raíz de `sustock-backend/` copiando `.env.example`:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp ../.env.example .env
 ```
 
-## Deployment
+| Variable | Requerida | Descripción | Ejemplo |
+|---|---|---|---|
+| `DATABASE_URL` | ✅ | Cadena de conexión a PostgreSQL | `postgresql://postgres:root@localhost:5432/sustock_db` |
+| `JWT_SECRET` | ✅ | Clave secreta para firmar tokens JWT. Usar mínimo 32 caracteres aleatorios en producción | `mi_clave_super_secreta_32chars` |
+| `FRONTEND_URL` | ✅ | Origen permitido por CORS (URL del frontend) | `http://localhost:4200` |
+| `PORT` | — | Puerto en el que escucha la API (por defecto `3000`) | `3000` |
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+> **Importante:** nunca commitear el archivo `.env`. Está incluido en `.gitignore`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
+
+## Cómo correr localmente (sin Docker)
+
+### 1. Instalar dependencias
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cd sustock-backend
+npm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 2. Configurar la base de datos
 
-## Resources
+Asegurarse de tener PostgreSQL corriendo y crear la base de datos indicada en `DATABASE_URL`.
 
-Check out a few resources that may come in handy when working with NestJS:
+Ejecutar las migraciones:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npx prisma migrate deploy
+```
 
-## Support
+Generar el cliente de Prisma (necesario tras cada cambio de esquema):
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npx prisma generate
+```
 
-## Stay in touch
+Opcionalmente, cargar datos de prueba:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+npm run db:seed
+```
 
-## License
+### 3. Iniciar el servidor
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# Modo desarrollo con hot-reload
+npm run start:dev
+
+# Modo desarrollo sin watch
+npm run start
+
+# Modo producción
+npm run start:prod
+```
+
+La API queda disponible en `http://localhost:3000`.
+
+---
+
+## Cómo correr con Docker
+
+La forma más sencilla de levantar el proyecto completo (base de datos + backend + frontend) es desde la raíz del monorepo:
+
+```bash
+cd ..                         # ir a la raíz SuStock/
+cp .env.example .env          # configurar variables (editar JWT_SECRET como mínimo)
+docker compose up --build
+```
+
+Docker Compose levanta tres servicios:
+
+| Servicio | Imagen | Puerto expuesto |
+|---|---|---|
+| `postgres` | `postgres:17-alpine` | interno |
+| `backend` | build local | interno (`:3000`) |
+| `frontend` | build local + nginx | `${FRONTEND_PORT:-80}` |
+
+El entrypoint del backend ejecuta automáticamente `prisma migrate deploy` antes de arrancar la API, garantizando que el esquema esté siempre actualizado.
+
+Para levantar solo la base de datos y el backend:
+
+```bash
+docker compose up postgres backend
+```
+
+Para reconstruir las imágenes tras cambios en el código:
+
+```bash
+docker compose up --build backend
+```
+
+---
+
+## Estructura de carpetas
+
+```
+sustock-backend/
+├── prisma/
+│   ├── schema.prisma          # Modelos, relaciones y enums
+│   ├── migrations/            # Migraciones SQL versionadas
+│   └── seed.ts                # Script para poblar la base de datos
+├── src/
+│   ├── main.ts                # Bootstrap: CORS, ValidationPipe, puerto
+│   ├── app.module.ts          # Módulo raíz
+│   ├── app.routes.ts          # Constantes de rutas centralizadas
+│   ├── prisma/
+│   │   └── prisma.service.ts  # Singleton de PrismaClient con pool pg
+│   ├── auth/                  # Registro, login, estrategia JWT, guards
+│   ├── workspace/             # CRUD de espacios de trabajo y cambio de moneda
+│   ├── workspace-context/     # WorkspaceGuard + @CurrentWorkspace()
+│   ├── team/                  # Invitación y eliminación de miembros
+│   ├── products/              # Catálogo: CRUD, paginación, búsqueda, stock bajo
+│   ├── movements/             # Movimientos de stock (IN / OUT / ADJUSTMENT)
+│   ├── sales/                 # Ventas con anulación y auditoría
+│   ├── clients/               # Gestión de clientes
+│   └── dashboard/             # Métricas del espacio de trabajo
+├── Dockerfile                 # Build multi-stage (build → runtime)
+├── .env                       # Variables de entorno locales (no commitear)
+└── .env.example               # Plantilla de variables requeridas
+```
+
+---
+
+## Endpoints principales
+
+Todos los endpoints (excepto `/auth/*`) requieren:
+- Header `Authorization: Bearer <token>`
+- Header `x-workspace-id: <id_del_workspace>`
+
+| Módulo | Prefijo | Descripción |
+|---|---|---|
+| Auth | `/auth` | Registro, login, perfil |
+| Workspace | `/workspaces` | CRUD y cambio de moneda |
+| Equipo | `/team` | Invitar y eliminar miembros |
+| Productos | `/products` | CRUD, paginación, filtros |
+| Movimientos | `/movements` | Crear y listar movimientos |
+| Ventas | `/sales` | Crear, listar, anular ventas |
+| Clientes | `/clients` | CRUD y restauración |
+| Dashboard | `/dashboard` | Resumen y métricas |
+
+---
+
+## Migraciones
+
+```bash
+# Aplicar migraciones pendientes (producción / CI)
+npx prisma migrate deploy
+
+# Crear una nueva migración en desarrollo
+npx prisma migrate dev --name nombre_descriptivo
+
+# Abrir Prisma Studio (UI para la base de datos)
+npx prisma studio
+```
+
+---
+
+## Scripts disponibles
+
+| Script | Descripción |
+|---|---|
+| `npm run start` | Inicia el servidor (sin watch) |
+| `npm run start:dev` | Inicia con hot-reload (desarrollo) |
+| `npm run start:debug` | Inicia en modo debug con watch |
+| `npm run start:prod` | Corre el build compilado |
+| `npm run build` | Compila TypeScript a `dist/` |
+| `npm run lint` | Corre ESLint con autofix |
+| `npm run format` | Formatea con Prettier |
+| `npm run test` | Ejecuta tests unitarios con Jest |
+| `npm run test:watch` | Tests en modo watch |
+| `npm run test:cov` | Tests con reporte de cobertura |
+| `npm run test:e2e` | Tests end-to-end |
+| `npx prisma db seed` | Pobla la base de datos con datos de prueba |
