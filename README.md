@@ -45,6 +45,8 @@ cp ../.env.example .env
 | `PORT` | — | Puerto en el que escucha la API (por defecto `3000`) | `3000` |
 
 > **Importante:** nunca commitear el archivo `.env`. Está incluido en `.gitignore`.
+> En Docker, el host debe ser `postgres` (nombre del servicio): 
+> `postgresql://postgres:root@postgres:5432/sustock_db`
 
 ---
 
