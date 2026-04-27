@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { SaleStatus } from '@prisma/client'
 
 @Injectable()
 export class DashboardService {
@@ -71,7 +72,8 @@ export class DashboardService {
             this.prisma.sale.count({
                 where: {
                     workspaceId,
-                    createdAt: { gte: startOfToday }
+                    createdAt: { gte: startOfToday },
+                    status: { not: SaleStatus.CANCELLED }
                 }
             }),
 
@@ -79,7 +81,8 @@ export class DashboardService {
             this.prisma.sale.aggregate({
                 where: {
                     workspaceId,
-                    createdAt: { gte: startOfToday }
+                    createdAt: { gte: startOfToday },
+                    status: { not: SaleStatus.CANCELLED }
                 },
                 _sum: { totalAmount: true }
             }),
