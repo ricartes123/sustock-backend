@@ -28,6 +28,9 @@ export class DashboardService {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
         const [
             totalProducts,
             totalStockValueResult,
@@ -40,7 +43,8 @@ export class DashboardService {
             noPriceCount,
             noSales30DaysResult,
             topProductsResult,
-            lowStockProductsResult
+            lowStockProductsResult,
+            salesForChart
         ] = await Promise.all([
 
             // 1. Total active products
@@ -160,7 +164,21 @@ export class DashboardService {
                 AND p.stock <= p."stockMin"
                 ORDER BY p.stock ASC
                 LIMIT 5
-            `
+            `,
+
+            // 13. Sales for chart
+            this.prisma.sale.findMany({
+                where: {
+                    workspaceId,
+                    status: { not: SaleStatus.CANCELLED },
+                    createdAt: { gte: ninetyDaysAgo }
+                },
+                select: {
+                    createdAt: true,
+                    totalAmount: true
+                },
+                orderBy: { createdAt: 'asc' }
+            })
         ]);
 
         return {
@@ -179,6 +197,10 @@ export class DashboardService {
             recentMovements,
             topProducts: topProductsResult.map(p => ({ ...p, totalSold: Number(p.totalSold) })),
             lowStockProducts: lowStockProductsResult.map(p => ({ ...p, stock: Number(p.stock), stockMin: Number(p.stockMin) })),
+            salesForChart: salesForChart.map(s => ({
+                createdAt: s.createdAt,
+                totalAmount: Number(s.totalAmount)
+            })),
 
             // Bloque 4 (Alerts - if still needed by frontend)
             alerts: {
