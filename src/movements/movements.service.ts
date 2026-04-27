@@ -50,7 +50,7 @@ export class MovementsService {
                 data: {
                     type: data.type,
                     quantity: data.quantity,
-                    reason: data.reason,
+                    reason: data.reason || (data.type === MovementType.IN ? 'Ingreso de stock' : undefined),
                     productId: product.id,
                     workspaceId,
                     userId,
