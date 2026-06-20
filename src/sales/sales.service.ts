@@ -88,8 +88,8 @@ export class SalesService {
                 });
             }
 
-            // Update sale total amount
-            await tx.sale.update({
+            // Update sale total amount and create items; return updated sale
+            return tx.sale.update({
                 where: { id: sale.id },
                 data: {
                     totalAmount,
@@ -97,9 +97,16 @@ export class SalesService {
                         create: saleItemsCreate
                     }
                 },
+                include: {
+                    items: {
+                        include: { product: true },
+                    },
+                    client: {
+                        select: { name: true, phone: true, email: true },
+                    },
+                    user: { select: { firstName: true, lastName: true, email: true } },
+                },
             });
-
-            return sale;
         });
     }
 

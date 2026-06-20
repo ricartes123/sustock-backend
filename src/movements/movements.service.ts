@@ -111,7 +111,17 @@ export class MovementsService {
                             firstName: true,
                             lastName: true,
                         }
-                    }
+                    },
+                    sale: {
+                        select: {
+                            id: true,
+                            totalAmount: true,
+                            createdAt: true,
+                            client: {
+                                select: { id: true, name: true },
+                            },
+                        },
+                    },
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
@@ -210,7 +220,7 @@ export class MovementsService {
         const skip = (page - 1) * limit
 
         const product = await this.prisma.product.findFirst({
-            where: { id: productId, workspaceId, isActive: true },
+            where: { id: productId, workspaceId },
         });
 
         if (!product) {
