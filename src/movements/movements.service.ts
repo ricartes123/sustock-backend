@@ -37,7 +37,7 @@ export class MovementsService {
                 stockUpdate = { stock: { increment: data.quantity } }
             } else if (data.type === MovementType.OUT) {
                 if (product.stock < data.quantity) {
-                    throw new BadRequestException(`La acción podría poner en peligro la credibilidad de los datos de su inventario. El stock de ${product.name} quedaría en negativo.`);
+                    throw new BadRequestException(`Stock insuficiente de "${product.name}". Stock actual: ${product.stock} unidades.`);
                 }
                 stockUpdate = { stock: { decrement: data.quantity } }
             } else if (data.type === MovementType.ADJUSTMENT) {

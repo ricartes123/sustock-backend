@@ -55,16 +55,17 @@ export class SalesService {
                 }
 
                 if (product.stock < item.quantity) {
-                    throw new BadRequestException(`La acción podría poner en peligro la credibilidad de los datos de su inventario. El stock de ${product.name} quedaría en negativo.`);
+                    throw new BadRequestException(`Stock insuficiente de "${product.name}". Stock actual: ${Number(product.stock)} unidades.`);
                 }
 
-                const lineTotal = Number(product.price) * item.quantity;
+                const unitPrice = item.unitPrice !== undefined ? item.unitPrice : Number(product.price);
+                const lineTotal = unitPrice * item.quantity;
                 totalAmount = new Prisma.Decimal(Number(totalAmount) + lineTotal);
 
                 saleItemsCreate.push({
                     productId: product.id,
                     quantity: item.quantity,
-                    price: product.price,
+                    price: new Prisma.Decimal(unitPrice),
                     unitCost: product.costPrice,
                 });
 

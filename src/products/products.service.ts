@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { PaginationDto } from './dto/pagination.dto'
 import { Prisma, Product } from '@prisma/client'
+import * as XLSX from 'xlsx'
 
 @Injectable()
 export class ProductsService {
@@ -154,6 +155,73 @@ export class ProductsService {
         isActive: data.isActive
       },
     })
+  }
+
+  async importProducts(buffer: Buffer, workspaceId: string) {
+    let rows: Record<string, unknown>[]
+    try {
+      const workbook = XLSX.read(buffer, { type: 'buffer' })
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
+    } catch {
+      throw new BadRequestException('No se pudo leer el archivo. Asegurate de que sea un Excel (.xlsx) o CSV válido.')
+    }
+
+    if (rows.length === 0) {
+      throw new BadRequestException('El archivo está vacío o no tiene filas de datos.')
+    }
+
+    if (rows.length > 500) {
+      throw new BadRequestException('El archivo tiene más de 500 filas. Dividilo en partes más pequeñas.')
+    }
+
+    const errors: { row: number; message: string }[] = []
+    let created = 0
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      const rowNum = i + 2
+
+      const name = String(row['Nombre'] ?? '').trim()
+      if (!name) {
+        errors.push({ row: rowNum, message: 'El nombre del producto es requerido.' })
+        continue
+      }
+
+      const price = parseFloat(String(row['Precio de Venta'] ?? '0'))
+      const costPrice = parseFloat(String(row['Precio de Costo'] ?? '0'))
+      const stock = parseInt(String(row['Stock'] ?? '0'), 10)
+      const stockMin = parseInt(String(row['Stock Mínimo'] ?? '0'), 10)
+
+      if (isNaN(price) || price < 0) {
+        errors.push({ row: rowNum, message: `"${name}": Precio de Venta debe ser un número mayor o igual a 0.` })
+        continue
+      }
+      if (isNaN(costPrice) || costPrice < 0) {
+        errors.push({ row: rowNum, message: `"${name}": Precio de Costo debe ser un número mayor o igual a 0.` })
+        continue
+      }
+      if (isNaN(stock) || stock < 0) {
+        errors.push({ row: rowNum, message: `"${name}": Stock debe ser un número entero mayor o igual a 0.` })
+        continue
+      }
+
+      await this.prisma.product.create({
+        data: {
+          name,
+          sku: String(row['SKU'] ?? '').trim() || null,
+          barcode: String(row['Código de Barras'] ?? '').trim() || null,
+          price: new Prisma.Decimal(price),
+          costPrice: new Prisma.Decimal(costPrice),
+          stock,
+          stockMin: isNaN(stockMin) || stockMin < 0 ? 0 : stockMin,
+          workspaceId,
+        },
+      })
+      created++
+    }
+
+    return { created, total: rows.length, errors }
   }
 
   async remove(productId: string, workspaceId: string) {

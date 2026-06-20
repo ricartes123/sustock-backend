@@ -8,7 +8,11 @@ import {
   Patch,
   Delete,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { ProductsService } from './products.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
@@ -30,6 +34,16 @@ export class ProductsController {
     @CurrentWorkspace() workspace: Workspace,
   ) {
     return this.productsService.create(data, workspace.id)
+  }
+
+  @Post(APP_ROUTES.PRODUCTS.IMPORT)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  importProducts(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentWorkspace() workspace: Workspace,
+  ) {
+    if (!file) throw new BadRequestException('No se recibió ningún archivo.')
+    return this.productsService.importProducts(file.buffer, workspace.id)
   }
 
   @Get()
