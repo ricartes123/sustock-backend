@@ -8,6 +8,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import type { Workspace } from '@prisma/client';
 import { APP_ROUTES } from '../app.routes';
+import { SalesQueryDto } from './dto/sales-query.dto';
 import { PaginationDto } from '../products/dto/pagination.dto';
 
 @Controller(APP_ROUTES.SALES.ROOT)
@@ -25,8 +26,8 @@ export class SalesController {
     }
 
     @Get()
-    findAll(@CurrentWorkspace() workspace: Workspace, @Query() pagination: PaginationDto) {
-        return this.salesService.findAll(workspace.id, pagination);
+    findAll(@CurrentWorkspace() workspace: Workspace, @Query() query: SalesQueryDto) {
+        return this.salesService.findAll(workspace.id, query);
     }
 
     @Get(APP_ROUTES.SALES.BY_ID)

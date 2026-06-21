@@ -44,7 +44,8 @@ export class DashboardService {
             noSales30DaysResult,
             topProductsResult,
             lowStockProductsResult,
-            salesForChart
+            salesForChartResult,
+            costStockValueResult,
         ] = await Promise.all([
 
             // 1. Total active products
@@ -166,19 +167,27 @@ export class DashboardService {
                 LIMIT 5
             `,
 
-            // 13. Sales for chart
-            this.prisma.sale.findMany({
-                where: {
-                    workspaceId,
-                    status: { not: SaleStatus.CANCELLED },
-                    createdAt: { gte: ninetyDaysAgo }
-                },
-                select: {
-                    createdAt: true,
-                    totalAmount: true
-                },
-                orderBy: { createdAt: 'asc' }
-            })
+            // 13. Sales for chart with gross profit per sale
+            this.prisma.$queryRaw<{ createdAt: Date; totalAmount: number; grossProfit: number }[]>`
+                SELECT s."createdAt",
+                       s."totalAmount"::float AS "totalAmount",
+                       COALESCE(SUM((si.price - si."unitCost") * si.quantity), 0)::float AS "grossProfit"
+                FROM "Sale" s
+                LEFT JOIN "SaleItem" si ON si."saleId" = s.id
+                WHERE s."workspaceId" = ${workspaceId}
+                AND s.status != 'CANCELLED'
+                AND s."createdAt" >= ${ninetyDaysAgo}
+                GROUP BY s.id, s."createdAt", s."totalAmount"
+                ORDER BY s."createdAt" ASC
+            `,
+
+            // 14. Cost of inventory (what was actually paid for current stock)
+            this.prisma.$queryRaw<{ total: number }[]>`
+                SELECT COALESCE(SUM("costPrice" * stock), 0)::float AS total
+                FROM "Product"
+                WHERE "workspaceId" = ${workspaceId}
+                AND "isActive" = true
+            `,
         ]);
 
         return {
@@ -197,9 +206,11 @@ export class DashboardService {
             recentMovements,
             topProducts: topProductsResult.map(p => ({ ...p, totalSold: Number(p.totalSold) })),
             lowStockProducts: lowStockProductsResult.map(p => ({ ...p, stock: Number(p.stock), stockMin: Number(p.stockMin) })),
-            salesForChart: salesForChart.map(s => ({
+            costStockValue: Number(costStockValueResult[0]?.total ?? 0),
+            salesForChart: salesForChartResult.map(s => ({
                 createdAt: s.createdAt,
-                totalAmount: Number(s.totalAmount)
+                totalAmount: Number(s.totalAmount),
+                grossProfit: Number(s.grossProfit),
             })),
 
             // Bloque 4 (Alerts - if still needed by frontend)

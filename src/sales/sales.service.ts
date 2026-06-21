@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { MovementType, SaleStatus, Prisma } from '@prisma/client';
 import { PaginationDto } from '../products/dto/pagination.dto';
+import { SalesQueryDto } from './dto/sales-query.dto';
 
 @Injectable()
 export class SalesService {
@@ -111,9 +112,55 @@ export class SalesService {
         });
     }
 
-    async findAll(workspaceId: string, { page = 1, limit = 10 }: PaginationDto = {}) {
+    async findAll(workspaceId: string, query: SalesQueryDto = {}) {
+        const { page = 1, limit = 10, search, status, startDate, endDate, minAmount, maxAmount } = query;
         const skip = (page - 1) * limit;
         const whereClause: Prisma.SaleWhereInput = { workspaceId };
+
+        if (status && status !== 'ALL') {
+            whereClause.status = status as any;
+        }
+
+        if (search) {
+            whereClause.OR = [
+                {
+                    client: {
+                        name: {
+                            contains: search,
+                            mode: 'insensitive',
+                        },
+                    },
+                },
+                {
+                    client: {
+                        email: {
+                            contains: search,
+                            mode: 'insensitive',
+                        },
+                    },
+                },
+            ];
+        }
+
+        if (startDate || endDate) {
+            whereClause.createdAt = {};
+            if (startDate) {
+                whereClause.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+            }
+            if (endDate) {
+                whereClause.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
+            }
+        }
+
+        if (minAmount !== undefined || maxAmount !== undefined) {
+            whereClause.totalAmount = {};
+            if (minAmount !== undefined) {
+                whereClause.totalAmount.gte = new Prisma.Decimal(minAmount);
+            }
+            if (maxAmount !== undefined) {
+                whereClause.totalAmount.lte = new Prisma.Decimal(maxAmount);
+            }
+        }
 
         const [sales, total] = await Promise.all([
             this.prisma.sale.findMany({
