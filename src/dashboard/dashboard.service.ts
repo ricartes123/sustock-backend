@@ -8,7 +8,7 @@ export class DashboardService {
         private prisma: PrismaService,
     ) { }
 
-    async getOverview(workspaceId: string) {
+    async getOverview(workspaceId: string, timeZone = 'UTC') {
         const workspace = await this.prisma.workspace.findUnique({
             where: { id: workspaceId },
             select: { currency: true },
@@ -18,12 +18,13 @@ export class DashboardService {
             throw new NotFoundException('Workspace not found');
         }
 
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+        // Day/month boundaries follow the client's time zone, not the server's.
+        // The final AT TIME ZONE 'UTC' returns a plain timestamp: the pg adapter drops the
+        // offset of timestamptz values when the session time zone is not UTC.
+        const [{ startOfToday, startOfMonth }] = await this.prisma.$queryRaw<{ startOfToday: Date; startOfMonth: Date }[]>`
+            SELECT (date_trunc('day', now() AT TIME ZONE ${timeZone}) AT TIME ZONE ${timeZone}) AT TIME ZONE 'UTC' AS "startOfToday",
+                   (date_trunc('month', now() AT TIME ZONE ${timeZone}) AT TIME ZONE ${timeZone}) AT TIME ZONE 'UTC' AS "startOfMonth"
+        `;
 
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
