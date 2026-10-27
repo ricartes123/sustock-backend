@@ -18,14 +18,10 @@ async function bootstrap() {
     .map((origin) => origin.trim())
     .filter(Boolean) ?? ['http://localhost:4200'];
 
+  // Unlisted origins just get no CORS headers (the browser blocks them); erroring here
+  // would turn same-origin requests proxied with an Origin header into 500s.
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Not allowed by CORS: ${origin}`));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
   });
 
