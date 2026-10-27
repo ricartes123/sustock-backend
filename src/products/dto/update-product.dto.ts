@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator'
+import { IsOptional, IsString, IsNumber, IsInt, IsBoolean, Min } from 'class-validator'
 
 export class UpdateProductDto {
   @IsOptional()
@@ -14,25 +14,26 @@ export class UpdateProductDto {
   barcode?: string
 
   @IsOptional()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   price?: number
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(0)
   stock?: number
 
   @IsOptional()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   costPrice?: number
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(0)
   stockMin?: number
 
   @IsOptional()
+  @IsBoolean()
   isActive?: boolean
 }

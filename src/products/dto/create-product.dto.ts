@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, IsOptional } from 'class-validator'
+import { IsString, IsNumber, IsInt, Min, IsOptional } from 'class-validator'
 
 export class CreateProductDto {
   @IsString()
@@ -12,20 +12,20 @@ export class CreateProductDto {
   @IsOptional()
   barcode?: string
 
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   price: number
 
-  @IsNumber()
+  @IsInt()
   @Min(0)
   stock: number
 
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @IsOptional()
   costPrice?: number
 
-  @IsNumber()
+  @IsInt()
   @Min(0)
   @IsOptional()
   stockMin?: number

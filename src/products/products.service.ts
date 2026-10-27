@@ -5,6 +5,7 @@ import { UpdateProductDto } from './dto/update-product.dto'
 import { PaginationDto } from './dto/pagination.dto'
 import { Prisma } from '@prisma/client'
 import * as XLSX from 'xlsx'
+import { isBlank, parseMoney, parseNonNegativeInt } from './import-parsers'
 
 @Injectable()
 export class ProductsService {
@@ -152,21 +153,25 @@ export class ProductsService {
         continue
       }
 
-      const price = parseFloat(String(row['Precio de Venta'] ?? '0'))
-      const costPrice = parseFloat(String(row['Precio de Costo'] ?? '0'))
-      const stock = parseInt(String(row['Stock'] ?? '0'), 10)
-      const stockMin = parseInt(String(row['Stock Mínimo'] ?? '0'), 10)
+      const price = parseMoney(row['Precio de Venta'])
+      const costPrice = isBlank(row['Precio de Costo']) ? new Prisma.Decimal(0) : parseMoney(row['Precio de Costo'])
+      const stock = parseNonNegativeInt(row['Stock'])
+      const stockMin = isBlank(row['Stock Mínimo']) ? 0 : parseNonNegativeInt(row['Stock Mínimo'])
 
-      if (isNaN(price) || price < 0) {
-        errors.push({ row: rowNum, message: `"${name}": Precio de Venta debe ser un número mayor o igual a 0.` })
+      if (price === null) {
+        errors.push({ row: rowNum, message: `"${name}": Precio de Venta debe ser un número mayor o igual a 0, con hasta 2 decimales.` })
         continue
       }
-      if (isNaN(costPrice) || costPrice < 0) {
-        errors.push({ row: rowNum, message: `"${name}": Precio de Costo debe ser un número mayor o igual a 0.` })
+      if (costPrice === null) {
+        errors.push({ row: rowNum, message: `"${name}": Precio de Costo debe ser un número mayor o igual a 0, con hasta 2 decimales.` })
         continue
       }
-      if (isNaN(stock) || stock < 0) {
+      if (stock === null) {
         errors.push({ row: rowNum, message: `"${name}": Stock debe ser un número entero mayor o igual a 0.` })
+        continue
+      }
+      if (stockMin === null) {
+        errors.push({ row: rowNum, message: `"${name}": Stock Mínimo debe ser un número entero mayor o igual a 0.` })
         continue
       }
 
@@ -175,10 +180,10 @@ export class ProductsService {
           name,
           sku: String(row['SKU'] ?? '').trim() || null,
           barcode: String(row['Código de Barras'] ?? '').trim() || null,
-          price: new Prisma.Decimal(price),
-          costPrice: new Prisma.Decimal(costPrice),
+          price,
+          costPrice,
           stock,
-          stockMin: isNaN(stockMin) || stockMin < 0 ? 0 : stockMin,
+          stockMin,
           workspaceId,
         },
       })
