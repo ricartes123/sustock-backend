@@ -14,90 +14,60 @@ export class SalesService {
             throw new BadRequestException('Sale must contain at least one item');
         }
 
+        const productIds = data.items.map((item) => item.productId);
+
+        if (new Set(productIds).size !== productIds.length) {
+            throw new BadRequestException('Each product can only appear once per sale');
+        }
+
         return this.prisma.$transaction(async (tx) => {
+            // Lock in a stable order so concurrent sales sharing products cannot deadlock
+            for (const productId of [...productIds].sort()) {
+                await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${productId} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
+            }
+
+            const products = await tx.product.findMany({
+                where: { id: { in: productIds }, workspaceId, isActive: true },
+            });
+            const productsById = new Map(products.map((product) => [product.id, product]));
+
             let totalAmount = new Prisma.Decimal(0);
             const saleItemsCreate: Prisma.SaleItemCreateManySaleInput[] = [];
 
-            // Record the sale
-            const sale = await tx.sale.create({
-                data: {
-                    totalAmount,
-                    clientId: data.clientId || null,
-                    workspaceId,
-                    userId,
-                },
-                include: {
-                    items: {
-                        include: {
-                            product: true,
-                        },
-                    },
-                    client: {
-                        select: {
-                            name: true,
-                            phone: true,
-                            email: true,
-                        }
-                    },
-                    user: { select: { firstName: true, lastName: true, email: true } },
-                },
-            });
-
             for (const item of data.items) {
-                // Lock product row to prevent race conditions
-                await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${item.productId} FOR UPDATE`;
-
-                const product = await tx.product.findFirst({
-                    where: { id: item.productId, workspaceId, isActive: true },
-                });
+                const product = productsById.get(item.productId);
 
                 if (!product) {
                     throw new NotFoundException(`Product not found`);
                 }
 
                 if (product.stock < item.quantity) {
-                    throw new BadRequestException(`Stock insuficiente de "${product.name}". Stock actual: ${Number(product.stock)} unidades.`);
+                    throw new BadRequestException(`Stock insuficiente de "${product.name}". Stock actual: ${product.stock} unidades.`);
                 }
 
-                const unitPrice = item.unitPrice !== undefined ? item.unitPrice : Number(product.price);
-                const lineTotal = unitPrice * item.quantity;
-                totalAmount = new Prisma.Decimal(Number(totalAmount) + lineTotal);
+                const unitPrice = item.unitPrice !== undefined ? new Prisma.Decimal(item.unitPrice) : product.price;
+                totalAmount = totalAmount.plus(unitPrice.times(item.quantity));
 
                 saleItemsCreate.push({
                     productId: product.id,
                     quantity: item.quantity,
-                    price: new Prisma.Decimal(unitPrice),
+                    price: unitPrice,
                     unitCost: product.costPrice,
                 });
 
-                // Decrement stock
                 await tx.product.update({
                     where: { id: product.id },
                     data: { stock: { decrement: item.quantity } },
                 });
-
-                // Generate movement OUT
-                await tx.movement.create({
-                    data: {
-                        type: MovementType.OUT,
-                        quantity: item.quantity,
-                        reason: 'Venta',
-                        productId: product.id,
-                        workspaceId,
-                        userId,
-                        saleId: sale.id,
-                    },
-                });
             }
 
-            // Update sale total amount and create items; return updated sale
-            return tx.sale.update({
-                where: { id: sale.id },
+            const sale = await tx.sale.create({
                 data: {
                     totalAmount,
-                    items: {
-                        create: saleItemsCreate
-                    }
+                    clientId: data.clientId || null,
+                    workspaceId,
+                    userId,
+                    items: { create: saleItemsCreate },
                 },
                 include: {
                     items: {
@@ -109,6 +79,20 @@ export class SalesService {
                     user: { select: { firstName: true, lastName: true, email: true } },
                 },
             });
+
+            await tx.movement.createMany({
+                data: saleItemsCreate.map((item) => ({
+                    type: MovementType.OUT,
+                    quantity: item.quantity,
+                    reason: 'Venta',
+                    productId: item.productId,
+                    workspaceId,
+                    userId,
+                    saleId: sale.id,
+                })),
+            });
+
+            return sale;
         });
     }
 

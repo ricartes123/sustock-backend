@@ -1,16 +1,16 @@
-import { IsString, IsOptional, IsArray, ValidateNested, IsNumber, Min } from 'class-validator';
+import { IsString, IsOptional, IsArray, ArrayNotEmpty, ValidateNested, IsNumber, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SaleItemDto {
     @IsString()
     productId: string;
 
-    @IsNumber()
+    @IsInt()
     @Min(1)
     quantity: number;
 
     @IsOptional()
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @Min(0)
     unitPrice?: number;
 }
@@ -21,6 +21,7 @@ export class CreateSaleDto {
     clientId?: string;
 
     @IsArray()
+    @ArrayNotEmpty()
     @ValidateNested({ each: true })
     @Type(() => SaleItemDto)
     items: SaleItemDto[];
