@@ -80,6 +80,28 @@ describe('ProductsService', () => {
     });
   });
 
+  describe('restore', () => {
+    it('reactivates an archived product', async () => {
+      prisma.product.findFirst
+        .mockResolvedValueOnce({ id: 'p1', sku: 'A1', barcode: null })
+        .mockResolvedValueOnce(null);
+
+      await service.restore('p1', 'w1');
+
+      expect(prisma.product.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'p1', workspaceId: 'w1', isActive: false });
+      expect(prisma.product.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { isActive: true } });
+    });
+
+    it('refuses to restore when its SKU is now used by an active product', async () => {
+      prisma.product.findFirst
+        .mockResolvedValueOnce({ id: 'p1', sku: 'A1', barcode: null })
+        .mockResolvedValueOnce({ name: 'Nuevo', sku: 'A1', barcode: null });
+
+      await expect(service.restore('p1', 'w1')).rejects.toThrow(ConflictException);
+      expect(prisma.product.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('importProducts', () => {
     it('reports duplicated codes and keeps decimals', async () => {
       prisma.product.findFirst.mockResolvedValue(null);

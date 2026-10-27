@@ -81,4 +81,12 @@ export class ProductsController {
   ) {
     return this.productsService.remove(id, workspace.id)
   }
+
+  @Post(APP_ROUTES.PRODUCTS.RESTORE)
+  restore(
+    @Param('id') id: string,
+    @CurrentWorkspace() workspace: Workspace,
+  ) {
+    return this.productsService.restore(id, workspace.id)
+  }
 }

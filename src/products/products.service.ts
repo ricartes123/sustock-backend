@@ -279,6 +279,23 @@ export class ProductsService {
     throw new ConflictException(`El código de barras "${barcode}" ya está en uso por "${existing.name}".`)
   }
 
+  async restore(productId: string, workspaceId: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { id: productId, workspaceId, isActive: false },
+    })
+
+    if (!product) {
+      throw new NotFoundException('Archived product not found')
+    }
+
+    await this.assertCodesAvailable(workspaceId, { sku: product.sku, barcode: product.barcode }, product.id)
+
+    return this.prisma.product.update({
+      where: { id: product.id },
+      data: { isActive: true },
+    })
+  }
+
   async remove(productId: string, workspaceId: string) {
     const product = await this.prisma.product.findFirst({
       where: {
