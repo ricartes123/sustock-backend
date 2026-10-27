@@ -10,14 +10,26 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-    console.log('Seeding database...')
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('Refusing to seed a production database')
+    }
 
-    // 1. Clean existing records (optional, but good for reliable seeding)
-    await prisma.movement.deleteMany()
-    await prisma.product.deleteMany()
-    await prisma.teamMember.deleteMany()
-    await prisma.workspace.deleteMany()
-    await prisma.user.deleteMany()
+    if (process.env.SEED_RESET === 'true') {
+        // 1. Wipe ALL data. Order matters: SaleItem -> Product is ON DELETE RESTRICT
+        console.log('SEED_RESET=true: deleting all existing data...')
+        await prisma.saleItem.deleteMany()
+        await prisma.sale.deleteMany()
+        await prisma.movement.deleteMany()
+        await prisma.product.deleteMany()
+        await prisma.client.deleteMany()
+        await prisma.teamMember.deleteMany()
+        await prisma.workspace.deleteMany()
+        await prisma.user.deleteMany()
+    } else if (await prisma.user.count() > 0) {
+        throw new Error('Database already has data. Run with SEED_RESET=true to wipe it and seed again.')
+    }
+
+    console.log('Seeding database...')
 
     // 2. Create standard user and hashed password
     const hashedPassword = await bcrypt.hash('password123', 10)
