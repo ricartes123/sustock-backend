@@ -1,61 +1,49 @@
-import { Controller, Post, Body, UseGuards, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Res, HttpCode, HttpStatus } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthenticatedUser } from './authenticated-user.interface';
-import { PrismaService } from '../prisma/prisma.service';
+import { AUTH_COOKIE, AUTH_SESSION_TTL_SECONDS, authCookieOptions } from './auth-cookie';
 import { APP_ROUTES } from '../app.routes';
 
 @Controller(APP_ROUTES.AUTH.ROOT)
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly prisma: PrismaService,
-  ) { }
+  constructor(private readonly authService: AuthService) { }
 
   @Post(APP_ROUTES.AUTH.REGISTER)
-  async register(@Body() data: RegisterDto) {
-    return this.authService.register(data);
+  async register(@Body() data: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const { userId, accessToken } = await this.authService.register(data);
+    this.setSessionCookie(res, accessToken);
+    return this.authService.getProfile(userId);
   }
 
   @Post(APP_ROUTES.AUTH.LOGIN)
-  async login(@Body() data: LoginDto) {
-    return this.authService.login(data);
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() data: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const { userId, accessToken } = await this.authService.login(data);
+    this.setSessionCookie(res, accessToken);
+    return this.authService.getProfile(userId);
+  }
+
+  @Post(APP_ROUTES.AUTH.LOGOUT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie(AUTH_COOKIE, authCookieOptions());
   }
 
   @Get(APP_ROUTES.AUTH.ME)
   @UseGuards(JwtAuthGuard)
-  async getProfile(@CurrentUser() user: AuthenticatedUser) {
-    const fullProfile = await this.prisma.user.findUnique({
-      where: { id: user.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        workspaces: {
-          select: {
-            id: true,
-            name: true,
-            currency: true,
-          }
-        },
-        teamMemberships: {
-          include: {
-            workspace: {
-              select: {
-                id: true,
-                name: true,
-                currency: true,
-              }
-            }
-          }
-        }
-      }
-    });
+  getProfile(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.getProfile(user.userId);
+  }
 
-    return fullProfile;
+  private setSessionCookie(res: Response, accessToken: string) {
+    res.cookie(AUTH_COOKIE, accessToken, {
+      ...authCookieOptions(),
+      maxAge: AUTH_SESSION_TTL_SECONDS * 1000,
+    });
   }
 }

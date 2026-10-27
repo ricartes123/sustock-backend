@@ -6,6 +6,8 @@ import { JwtService } from '@nestjs/jwt'
 import { UnauthorizedException } from '@nestjs/common'
 import { LoginDto } from './dto/login.dto'
 
+const WORKSPACE_SUMMARY = { select: { id: true, name: true, currency: true } } as const
+
 @Injectable()
 export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) { }
@@ -34,21 +36,15 @@ export class AuthService {
           },
         },
       },
-      include: {
-        workspaces: true,
-      },
+      select: { id: true, email: true },
     })
 
-    return {
-      message: 'User created successfully',
-      user,
-    }
+    return this.signToken(user)
   }
 
   async login(data: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: data.email },
-      include: { workspaces: true },
     })
 
     if (!user) {
@@ -64,13 +60,29 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials')
     }
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-    }
+    return this.signToken(user)
+  }
 
+  getProfile(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        workspaces: WORKSPACE_SUMMARY,
+        teamMemberships: {
+          select: { role: true, workspace: WORKSPACE_SUMMARY },
+        },
+      },
+    })
+  }
+
+  private signToken(user: { id: string; email: string }) {
     return {
-      accessToken: this.jwtService.sign(payload),
+      userId: user.id,
+      accessToken: this.jwtService.sign({ sub: user.id, email: user.email }),
     }
   }
 }
