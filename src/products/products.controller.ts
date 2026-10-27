@@ -19,6 +19,8 @@ import { UpdateProductDto } from './dto/update-product.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { WorkspaceGuard } from '../workspace-context/workspace.guard'
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator'
+import { CurrentUser } from '../auth/current-user.decorator'
+import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
 import type { Workspace } from '@prisma/client'
 import { PaginationDto } from './dto/pagination.dto'
 import { APP_ROUTES } from '../app.routes'
@@ -67,8 +69,9 @@ export class ProductsController {
     @Param('id') id: string,
     @Body() data: UpdateProductDto,
     @CurrentWorkspace() workspace: Workspace,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.productsService.update(id, data, workspace.id)
+    return this.productsService.update(id, data, workspace.id, user.userId)
   }
 
   @Delete(APP_ROUTES.PRODUCTS.BY_ID)

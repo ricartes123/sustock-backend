@@ -11,7 +11,10 @@ function workbookBuffer(rows: Record<string, unknown>[]): Buffer {
 
 describe('ProductsService', () => {
   const prisma = {
+    $executeRaw: jest.fn(),
+    $transaction: jest.fn(),
     product: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
+    movement: { create: jest.fn() },
   };
   const service = new ProductsService(prisma as unknown as PrismaService);
 
@@ -19,6 +22,7 @@ describe('ProductsService', () => {
     jest.resetAllMocks();
     prisma.product.create.mockImplementation(({ data }) => Promise.resolve(data));
     prisma.product.update.mockImplementation(({ data }) => Promise.resolve(data));
+    prisma.$transaction.mockImplementation((fn: (tx: typeof prisma) => unknown) => fn(prisma));
   });
 
   describe('create', () => {
@@ -43,7 +47,7 @@ describe('ProductsService', () => {
     it('does not re-check codes that did not change', async () => {
       prisma.product.findFirst.mockResolvedValueOnce({ id: 'p1', sku: 'A1', barcode: 'B1' });
 
-      await service.update('p1', { name: 'Renombrado', sku: 'A1', barcode: 'B1' }, 'w1');
+      await service.update('p1', { name: 'Renombrado', sku: 'A1', barcode: 'B1' }, 'w1', 'u1');
 
       expect(prisma.product.findFirst).toHaveBeenCalledTimes(1);
       expect(prisma.product.update).toHaveBeenCalled();
@@ -54,8 +58,25 @@ describe('ProductsService', () => {
         .mockResolvedValueOnce({ id: 'p1', sku: 'A1', barcode: null })
         .mockResolvedValueOnce({ name: 'Otro', sku: 'A2', barcode: null });
 
-      await expect(service.update('p1', { sku: 'A2' }, 'w1')).rejects.toThrow('A2');
+      await expect(service.update('p1', { sku: 'A2' }, 'w1', 'u1')).rejects.toThrow('A2');
       expect(prisma.product.findFirst.mock.calls[1][0].where.id).toEqual({ not: 'p1' });
+    });
+    it('records an ADJUSTMENT movement when the stock changes', async () => {
+      prisma.product.findFirst.mockResolvedValueOnce({ id: 'p1', sku: null, barcode: null, stock: 5 });
+
+      await service.update('p1', { stock: 8 }, 'w1', 'u1');
+
+      expect(prisma.movement.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ type: 'ADJUSTMENT', quantity: 8, productId: 'p1', userId: 'u1' }),
+      });
+    });
+
+    it('does not record a movement when the stock is unchanged', async () => {
+      prisma.product.findFirst.mockResolvedValueOnce({ id: 'p1', sku: null, barcode: null, stock: 5 });
+
+      await service.update('p1', { name: 'X', stock: 5 }, 'w1', 'u1');
+
+      expect(prisma.movement.create).not.toHaveBeenCalled();
     });
   });
 

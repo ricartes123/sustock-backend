@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { PaginationDto } from './dto/pagination.dto'
-import { Prisma } from '@prisma/client'
+import { MovementType, Prisma } from '@prisma/client'
 import * as XLSX from 'xlsx'
 import { isBlank, parseMoney, parseNonNegativeInt } from './import-parsers'
 
@@ -99,43 +99,62 @@ export class ProductsService {
     productId: string,
     data: UpdateProductDto,
     workspaceId: string,
+    userId: string,
   ) {
-    const product = await this.prisma.product.findFirst({
-      where: {
-        id: productId,
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${productId} AND "workspaceId" = ${workspaceId} FOR UPDATE`
+
+      const product = await tx.product.findFirst({
+        where: {
+          id: productId,
+          workspaceId,
+          isActive: true,
+        },
+      })
+
+      if (!product) {
+        throw new NotFoundException('Product not found')
+      }
+
+      const sku = data.sku === undefined ? undefined : normalizeCode(data.sku)
+      const barcode = data.barcode === undefined ? undefined : normalizeCode(data.barcode)
+
+      await this.assertCodesAvailable(
         workspaceId,
-        isActive: true,
-      },
-    })
+        {
+          sku: sku !== undefined && sku !== product.sku ? sku : null,
+          barcode: barcode !== undefined && barcode !== product.barcode ? barcode : null,
+        },
+        product.id,
+      )
 
-    if (!product) {
-      throw new NotFoundException('Product not found')
-    }
+      // Stock edits must leave a trace in the movement history like any other stock change
+      if (data.stock !== undefined && data.stock !== product.stock) {
+        await tx.movement.create({
+          data: {
+            type: MovementType.ADJUSTMENT,
+            quantity: data.stock,
+            reason: 'Edición de producto',
+            productId: product.id,
+            workspaceId,
+            userId,
+          },
+        })
+      }
 
-    const sku = data.sku === undefined ? undefined : normalizeCode(data.sku)
-    const barcode = data.barcode === undefined ? undefined : normalizeCode(data.barcode)
-
-    await this.assertCodesAvailable(
-      workspaceId,
-      {
-        sku: sku !== undefined && sku !== product.sku ? sku : null,
-        barcode: barcode !== undefined && barcode !== product.barcode ? barcode : null,
-      },
-      product.id,
-    )
-
-    return this.prisma.product.update({
-      where: { id: product.id },
-      data: {
-        name: data.name,
-        sku,
-        barcode,
-        costPrice: data.costPrice,
-        price: data.price,
-        stock: data.stock,
-        stockMin: data.stockMin,
-        isActive: data.isActive
-      },
+      return tx.product.update({
+        where: { id: product.id },
+        data: {
+          name: data.name,
+          sku,
+          barcode,
+          costPrice: data.costPrice,
+          price: data.price,
+          stock: data.stock,
+          stockMin: data.stockMin,
+          isActive: data.isActive
+        },
+      })
     })
   }
 
