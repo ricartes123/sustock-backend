@@ -140,6 +140,7 @@ export class DashboardService {
                     SELECT 1 FROM "SaleItem" si
                     JOIN "Sale" s ON s.id = si."saleId"
                     WHERE si."productId" = p.id
+                    AND s.status != 'CANCELLED'
                     AND s."createdAt" >= ${thirtyDaysAgo}
                 )
             `,
@@ -151,6 +152,7 @@ export class DashboardService {
                 JOIN "SaleItem" si ON si."productId" = p.id
                 JOIN "Sale" s ON s.id = si."saleId"
                 WHERE p."workspaceId" = ${workspaceId}
+                AND s.status != 'CANCELLED'
                 GROUP BY p.id, p.name
                 ORDER BY "totalSold" DESC
                 LIMIT 5
