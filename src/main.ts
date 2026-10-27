@@ -14,9 +14,9 @@ async function bootstrap() {
     }),
   );
 
-  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') ?? [
-    'http://localhost:4200',
-  ];
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? ['http://localhost:4200'];
 
   app.enableCors({
     origin: (origin, callback) => {
