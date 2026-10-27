@@ -145,10 +145,10 @@ export class SalesService {
         if (startDate || endDate) {
             whereClause.createdAt = {};
             if (startDate) {
-                whereClause.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+                whereClause.createdAt.gte = new Date(startDate);
             }
             if (endDate) {
-                whereClause.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
+                whereClause.createdAt.lte = new Date(endDate);
             }
         }
 
