@@ -58,6 +58,23 @@ describe('SalesService', () => {
       expect((sale.totalAmount as Prisma.Decimal).toString()).toBe('0.3');
     });
 
+    it('accepts discounts down to zero', async () => {
+      tx.product.findMany.mockResolvedValue([product('a', '10.00')]);
+
+      const sale = await service.create({ items: [{ productId: 'a', quantity: 2, unitPrice: 0 }] }, 'w1', 'u1');
+
+      expect((sale.totalAmount as Prisma.Decimal).toString()).toBe('0');
+    });
+
+    it('rejects prices above the list price', async () => {
+      tx.product.findMany.mockResolvedValue([product('a', '10.00')]);
+
+      await expect(
+        service.create({ items: [{ productId: 'a', quantity: 1, unitPrice: 10.01 }] }, 'w1', 'u1'),
+      ).rejects.toThrow('no puede superar el precio de lista');
+      expect(tx.sale.create).not.toHaveBeenCalled();
+    });
+
     it('rejects clients from another workspace', async () => {
       tx.client.findFirst.mockResolvedValue(null);
 

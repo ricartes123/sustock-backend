@@ -57,6 +57,11 @@ export class SalesService {
                 }
 
                 const unitPrice = item.unitPrice !== undefined ? new Prisma.Decimal(item.unitPrice) : product.price;
+
+                if (unitPrice.greaterThan(product.price)) {
+                    throw new BadRequestException(`El precio de "${product.name}" no puede superar el precio de lista.`);
+                }
+
                 totalAmount = totalAmount.plus(unitPrice.times(item.quantity));
 
                 saleItemsCreate.push({
