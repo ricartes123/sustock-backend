@@ -4,8 +4,6 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
-import { MovementsController } from './movements/movements.controller';
-import { MovementsService } from './movements/movements.service';
 import { MovementsModule } from './movements/movements.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { WorkspaceContextModule } from './workspace-context/workspace-context.module';
@@ -16,7 +14,7 @@ import { ClientsModule } from './clients/clients.module';
 
 @Module({
   imports: [AuthModule, PrismaModule, ProductsModule, MovementsModule, DashboardModule, WorkspaceContextModule, WorkspaceModule, TeamModule, SalesModule, ClientsModule],
-  controllers: [AppController, MovementsController],
-  providers: [AppService, MovementsService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
