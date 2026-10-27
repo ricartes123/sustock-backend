@@ -5,6 +5,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common'
+import { Role } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
@@ -29,13 +30,19 @@ export class WorkspaceGuard implements CanActivate {
           { teamMembers: { some: { userId: user.userId } } },
         ],
       },
+      include: {
+        teamMembers: { where: { userId: user.userId }, select: { role: true } },
+      },
     })
 
     if (!workspace) {
       throw new NotFoundException('Workspace not found or access denied')
     }
 
-    request.workspace = workspace
+    const { teamMembers, ...workspaceData } = workspace
+
+    request.workspace = workspaceData
+    request.workspaceRole = workspace.ownerId === user.userId ? Role.OWNER : teamMembers[0].role
 
     return true
   }
