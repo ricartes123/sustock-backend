@@ -94,4 +94,33 @@ describe('SalesService', () => {
       expect(tx.sale.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('remove', () => {
+    it('locks the sale before reading its status', async () => {
+      tx.sale.findFirst.mockResolvedValue({ id: 's1', status: 'CANCELLED', items: [] });
+
+      await expect(service.remove('s1', 'w1', 'u1')).rejects.toThrow('already cancelled');
+
+      const [strings, saleId, workspaceId] = tx.$executeRaw.mock.calls[0];
+      expect(strings.join('?')).toContain('FROM "Sale"');
+      expect(strings.join('?')).toContain('FOR UPDATE');
+      expect([saleId, workspaceId]).toEqual(['s1', 'w1']);
+      expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.sale.findFirst.mock.invocationCallOrder[0]);
+    });
+
+    it('restores stock scoped to the workspace', async () => {
+      tx.sale.findFirst.mockResolvedValue({
+        id: 's1',
+        status: 'ACTIVE',
+        items: [{ productId: 'b', quantity: 2 }, { productId: 'a', quantity: 1 }],
+      });
+
+      await service.remove('s1', 'w1', 'u1');
+
+      expect(tx.product.update.mock.calls.map((call) => call[0].where)).toEqual([
+        { id: 'a', workspaceId: 'w1' },
+        { id: 'b', workspaceId: 'w1' },
+      ]);
+    });
+  });
 });

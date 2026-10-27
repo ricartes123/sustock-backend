@@ -213,6 +213,9 @@ export class SalesService {
 
     async remove(id: string, workspaceId: string, userId: string) {
         return this.prisma.$transaction(async (tx) => {
+            // Serializes concurrent cancellations so stock is restored only once
+            await tx.$executeRaw`SELECT 1 FROM "Sale" WHERE id = ${id} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
+
             const sale = await tx.sale.findFirst({
                 where: { id, workspaceId },
                 include: { items: true },
@@ -226,9 +229,13 @@ export class SalesService {
                 throw new BadRequestException('Sale is already cancelled');
             }
 
-            for (const item of sale.items) {
+            const items = [...sale.items].sort((a, b) => a.productId.localeCompare(b.productId));
+
+            for (const item of items) {
+                await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${item.productId} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
+
                 await tx.product.update({
-                    where: { id: item.productId },
+                    where: { id: item.productId, workspaceId },
                     data: { stock: { increment: item.quantity } },
                 });
 
