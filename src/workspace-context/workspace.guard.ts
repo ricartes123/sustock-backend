@@ -3,9 +3,9 @@ import {
   CanActivate,
   ExecutionContext,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class WorkspaceGuard implements CanActivate {
@@ -17,19 +17,18 @@ export class WorkspaceGuard implements CanActivate {
 
     const workspaceId = request.headers['x-workspace-id'];
 
-    const whereClause: Prisma.WorkspaceWhereInput = {
-      OR: [
-        { ownerId: user.userId },
-        { teamMembers: { some: { userId: user.userId } } },
-      ],
-    };
-
-    if (workspaceId) {
-      whereClause.id = workspaceId;
+    if (typeof workspaceId !== 'string' || !workspaceId) {
+      throw new BadRequestException('Missing x-workspace-id header')
     }
 
     const workspace = await this.prisma.workspace.findFirst({
-      where: whereClause,
+      where: {
+        id: workspaceId,
+        OR: [
+          { ownerId: user.userId },
+          { teamMembers: { some: { userId: user.userId } } },
+        ],
+      },
     })
 
     if (!workspace) {
