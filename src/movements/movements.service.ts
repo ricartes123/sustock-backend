@@ -12,7 +12,7 @@ export class MovementsService {
     async create(data: CreateMovementDto, workspaceId: string, userId: string) {
         return this.prisma.$transaction(async (tx) => {
 
-            if (data.quantity <= 0) {
+            if (data.type !== MovementType.ADJUSTMENT && data.quantity <= 0) {
                 throw new BadRequestException('Quantity must be greater than zero')
             }
 

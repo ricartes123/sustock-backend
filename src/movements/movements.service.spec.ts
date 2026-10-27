@@ -31,4 +31,15 @@ describe('MovementsService', () => {
     ).rejects.toThrow('Stock insuficiente');
     expect(tx.product.update).not.toHaveBeenCalled();
   });
+
+  it('allows adjusting stock down to zero', async () => {
+    await service.create({ productId: 'p1', type: MovementType.ADJUSTMENT, quantity: 0 }, 'w1', 'u1');
+    expect(tx.product.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { stock: 0 } });
+  });
+
+  it('rejects zero-quantity IN and OUT movements', async () => {
+    await expect(
+      service.create({ productId: 'p1', type: MovementType.IN, quantity: 0 }, 'w1', 'u1'),
+    ).rejects.toThrow('greater than zero');
+  });
 });
