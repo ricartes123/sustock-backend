@@ -7,7 +7,12 @@ import { SALES_ROUTES } from './sales/sales.routes';
 import { TEAM_ROUTES } from './team/team.routes';
 import { WORKSPACE_ROUTES } from './workspace/workspace.routes';
 
+export const HEALTH_ROUTES = {
+  ROOT: 'health',
+};
+
 export const APP_ROUTES = {
+  HEALTH: HEALTH_ROUTES,
   AUTH: AUTH_ROUTES,
   CLIENTS: CLIENTS_ROUTES,
   DASHBOARD: DASHBOARD_ROUTES,
