@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { SalesService } from './sales.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -56,6 +56,16 @@ describe('SalesService', () => {
       );
 
       expect((sale.totalAmount as Prisma.Decimal).toString()).toBe('0.3');
+    });
+
+    it('rejects clients from another workspace', async () => {
+      tx.client.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.create({ clientId: 'foreign', items: [{ productId: 'a', quantity: 1 }] }, 'w1', 'u1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(tx.client.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'foreign', workspaceId: 'w1' });
+      expect(tx.sale.create).not.toHaveBeenCalled();
     });
 
     it('does not create the sale when stock is insufficient', async () => {

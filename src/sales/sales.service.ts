@@ -21,6 +21,17 @@ export class SalesService {
         }
 
         return this.prisma.$transaction(async (tx) => {
+            if (data.clientId) {
+                const client = await tx.client.findFirst({
+                    where: { id: data.clientId, workspaceId, isActive: true },
+                    select: { id: true },
+                });
+
+                if (!client) {
+                    throw new NotFoundException('Client not found');
+                }
+            }
+
             // Lock in a stable order so concurrent sales sharing products cannot deadlock
             for (const productId of [...productIds].sort()) {
                 await tx.$executeRaw`SELECT 1 FROM "Product" WHERE id = ${productId} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
