@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
@@ -12,11 +12,16 @@ export class ProductsService {
   constructor(private prisma: PrismaService) { }
 
   async create(data: CreateProductDto, workspaceId: string) {
+    const sku = normalizeCode(data.sku)
+    const barcode = normalizeCode(data.barcode)
+
+    await this.assertCodesAvailable(workspaceId, { sku, barcode })
+
     return this.prisma.product.create({
       data: {
         name: data.name,
-        sku: data.sku,
-        barcode: data.barcode,
+        sku,
+        barcode,
         costPrice: data.costPrice,
         price: data.price,
         stock: data.stock,
@@ -107,12 +112,24 @@ export class ProductsService {
       throw new NotFoundException('Product not found')
     }
 
+    const sku = data.sku === undefined ? undefined : normalizeCode(data.sku)
+    const barcode = data.barcode === undefined ? undefined : normalizeCode(data.barcode)
+
+    await this.assertCodesAvailable(
+      workspaceId,
+      {
+        sku: sku !== undefined && sku !== product.sku ? sku : null,
+        barcode: barcode !== undefined && barcode !== product.barcode ? barcode : null,
+      },
+      product.id,
+    )
+
     return this.prisma.product.update({
       where: { id: product.id },
       data: {
         name: data.name,
-        sku: data.sku,
-        barcode: data.barcode,
+        sku,
+        barcode,
         costPrice: data.costPrice,
         price: data.price,
         stock: data.stock,
@@ -141,6 +158,8 @@ export class ProductsService {
     }
 
     const errors: { row: number; message: string }[] = []
+    const seenSkus = new Set<string>()
+    const seenBarcodes = new Set<string>()
     let created = 0
 
     for (let i = 0; i < rows.length; i++) {
@@ -175,11 +194,30 @@ export class ProductsService {
         continue
       }
 
+      const sku = normalizeCode(row['SKU'])
+      const barcode = normalizeCode(row['Código de Barras'])
+
+      if ((sku && seenSkus.has(sku)) || (barcode && seenBarcodes.has(barcode))) {
+        errors.push({ row: rowNum, message: `"${name}": SKU o código de barras repetido dentro del archivo.` })
+        continue
+      }
+
+      try {
+        await this.assertCodesAvailable(workspaceId, { sku, barcode })
+      } catch (error) {
+        if (!(error instanceof ConflictException)) throw error
+        errors.push({ row: rowNum, message: `"${name}": ${error.message}` })
+        continue
+      }
+
+      if (sku) seenSkus.add(sku)
+      if (barcode) seenBarcodes.add(barcode)
+
       await this.prisma.product.create({
         data: {
           name,
-          sku: String(row['SKU'] ?? '').trim() || null,
-          barcode: String(row['Código de Barras'] ?? '').trim() || null,
+          sku,
+          barcode,
           price,
           costPrice,
           stock,
@@ -191,6 +229,35 @@ export class ProductsService {
     }
 
     return { created, total: rows.length, errors }
+  }
+
+  // Not a DB constraint yet: existing workspaces may already contain duplicates
+  private async assertCodesAvailable(
+    workspaceId: string,
+    { sku, barcode }: { sku: string | null; barcode: string | null },
+    excludeProductId?: string,
+  ) {
+    const codes: Prisma.ProductWhereInput[] = []
+    if (sku) codes.push({ sku })
+    if (barcode) codes.push({ barcode })
+    if (codes.length === 0) return
+
+    const existing = await this.prisma.product.findFirst({
+      where: {
+        workspaceId,
+        isActive: true,
+        OR: codes,
+        ...(excludeProductId && { id: { not: excludeProductId } }),
+      },
+      select: { name: true, sku: true, barcode: true },
+    })
+
+    if (!existing) return
+
+    if (sku && existing.sku === sku) {
+      throw new ConflictException(`El SKU "${sku}" ya está en uso por "${existing.name}".`)
+    }
+    throw new ConflictException(`El código de barras "${barcode}" ya está en uso por "${existing.name}".`)
   }
 
   async remove(productId: string, workspaceId: string) {
@@ -212,4 +279,8 @@ export class ProductsService {
 
     return { message: 'Product successfully archived' }
   }
+}
+
+function normalizeCode(value: unknown): string | null {
+  return String(value ?? '').trim() || null
 }
