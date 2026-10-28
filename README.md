@@ -41,7 +41,7 @@ cp ../.env.example .env
 |---|---|---|---|
 | `DATABASE_URL` | ✅ | Cadena de conexión a PostgreSQL | `postgresql://postgres:root@localhost:5432/sustock_db` |
 | `JWT_SECRET` | ✅ | Clave secreta para firmar tokens JWT. Usar mínimo 32 caracteres aleatorios en producción | `mi_clave_super_secreta_32chars` |
-| `FRONTEND_URL` | ✅ | Origen permitido por CORS (URL del frontend) | `http://localhost:4200` |
+| `CORS_ORIGINS` | ✅ | Orígenes permitidos por CORS, separados por coma (URL del frontend) | `http://localhost:4200,https://sustock.vercel.app` |
 | `PORT` | — | Puerto en el que escucha la API (por defecto `3000`) | `3000` |
 
 > **Importante:** nunca commitear el archivo `.env`. Está incluido en `.gitignore`.
