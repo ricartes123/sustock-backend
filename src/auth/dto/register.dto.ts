@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional } from 'class-validator'
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsISO4217CurrencyCode } from 'class-validator'
 
 export class RegisterDto {
   @IsEmail()
@@ -20,7 +20,7 @@ export class RegisterDto {
   @IsNotEmpty()
   lastName: string
 
-  @IsString()
+  @IsISO4217CurrencyCode()
   @IsOptional()
   currency?: string
 }

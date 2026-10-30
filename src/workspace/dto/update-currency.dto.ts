@@ -1,8 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min } from 'class-validator';
+import { IsISO4217CurrencyCode, IsOptional, IsNumber, Min } from 'class-validator';
 
 export class UpdateCurrencyDto {
-    @IsString()
-    @IsNotEmpty()
+    @IsISO4217CurrencyCode()
     newCurrency: string;
 
     @IsOptional()
