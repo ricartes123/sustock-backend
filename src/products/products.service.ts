@@ -126,6 +126,7 @@ export class ProductsService {
           barcode: barcode !== undefined && barcode !== product.barcode ? barcode : null,
         },
         product.id,
+        tx,
       )
 
       // Stock edits must leave a trace in the movement history like any other stock change
@@ -255,13 +256,14 @@ export class ProductsService {
     workspaceId: string,
     { sku, barcode }: { sku: string | null; barcode: string | null },
     excludeProductId?: string,
+    client: Prisma.TransactionClient = this.prisma,
   ) {
     const codes: Prisma.ProductWhereInput[] = []
     if (sku) codes.push({ sku })
     if (barcode) codes.push({ barcode })
     if (codes.length === 0) return
 
-    const existing = await this.prisma.product.findFirst({
+    const existing = await client.product.findFirst({
       where: {
         workspaceId,
         isActive: true,
