@@ -3,23 +3,44 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { PrismaService } from './../src/prisma/prisma.service';
 
-describe('AppController (e2e)', () => {
+describe('Health (e2e)', () => {
   let app: INestApplication<App>;
+  const prisma = { $queryRaw: jest.fn() };
 
-  beforeEach(async () => {
+  beforeAll(async () => {
+    process.env.JWT_SECRET ??= 'e2e-test-secret';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(PrismaService)
+      .useValue(prisma)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('GET /health responds ok when the database answers', () => {
+    prisma.$queryRaw.mockResolvedValueOnce([{ '?column?': 1 }]);
+
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect({ status: 'ok' });
+  });
+
+  it('GET /health responds 503 when the database is unreachable', () => {
+    prisma.$queryRaw.mockRejectedValueOnce(new Error('connection refused'));
+
+    return request(app.getHttpServer())
+      .get('/health')
+      .expect(503);
   });
 });

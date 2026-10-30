@@ -196,6 +196,7 @@ Los cambios que afectan el contrato de sesión (cookie, headers) deben desplegar
 | `npm run test` | Ejecuta los tests unitarios |
 | `npm run test:watch` | Tests en modo watch |
 | `npm run test:cov` | Tests con reporte de cobertura |
+| `npm run test:e2e` | Test e2e de `/health` sobre la app completa (no requiere base de datos) |
 | `npm run prisma:migrate` | Crea y aplica una migración en desarrollo |
 | `npm run prisma:studio` | Abre Prisma Studio |
 | `npx prisma db seed` | Carga datos de prueba |
