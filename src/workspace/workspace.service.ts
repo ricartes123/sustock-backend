@@ -44,12 +44,12 @@ export class WorkspaceService {
       });
 
       if (conversionRate && conversionRate > 0) {
-        // En Prisma updateMany con campos numéricos podemos usar operaciones matemáticas atómicas.
-        // Prisma Decimal type soporta multiply.
+        // Cost must follow price, otherwise margins and invested money mix two currencies
         await tx.product.updateMany({
           where: { workspaceId },
           data: {
-            price: { multiply: conversionRate }
+            price: { multiply: conversionRate },
+            costPrice: { multiply: conversionRate },
           }
         });
       }
