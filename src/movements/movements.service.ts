@@ -140,40 +140,6 @@ export class MovementsService {
         }
     }
 
-    async getStockRotation(workspaceId: string) {
-        const last30Days = new Date()
-        last30Days.setDate(last30Days.getDate() - 30)
-
-        const grouped = await this.prisma.movement.groupBy({
-            by: ['productId'],
-            where: {
-                workspaceId,
-                type: MovementType.OUT,
-                createdAt: { gte: last30Days },
-            },
-            _sum: { quantity: true },
-        })
-
-        const products = await this.prisma.product.findMany({
-            where: {
-                id: { in: grouped.map(g => g.productId) },
-            },
-            select: {
-                id: true,
-                name: true,
-            },
-        })
-
-        return grouped.map(g => {
-            const product = products.find(p => p.id === g.productId)
-            return {
-                productId: g.productId,
-                productName: product?.name,
-                quantitySoldLast30Days: g._sum.quantity ?? 0,
-            }
-        })
-    }
-
     async getLast30DaysSummary(workspaceId: string) {
         const last30Days = new Date()
         last30Days.setDate(last30Days.getDate() - 30)
