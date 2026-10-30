@@ -1,12 +1,13 @@
 import { Controller, Post, Body, UseGuards, Get, Query, Param } from '@nestjs/common'
 import { MovementsService } from './movements.service'
 import { CreateMovementDto } from './dto/create-movement.dto'
+import { MovementsQueryDto } from './dto/movements-query.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { WorkspaceGuard } from '../workspace-context/workspace.guard'
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator'
 import { CurrentUser } from '../auth/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
-import type { Workspace, MovementType } from '@prisma/client'
+import type { Workspace } from '@prisma/client'
 import { APP_ROUTES } from '../app.routes'
 
 @Controller(APP_ROUTES.MOVEMENTS.ROOT)
@@ -26,19 +27,15 @@ export class MovementsController {
     @Get()
     findAll(
         @CurrentWorkspace() workspace: Workspace,
-        @Query('page') page?: number,
-        @Query('limit') limit?: number,
-        @Query('startDate') startDate?: string,
-        @Query('endDate') endDate?: string,
-        @Query('type') type?: MovementType,
+        @Query() query: MovementsQueryDto,
     ) {
         return this.movementsService.findAll(
             workspace.id,
-            Number(page) || 1,
-            Number(limit) || 10,
-            startDate ? new Date(startDate) : undefined,
-            endDate ? new Date(endDate) : undefined,
-            type,
+            query.page,
+            query.limit,
+            query.startDate ? new Date(query.startDate) : undefined,
+            query.endDate ? new Date(query.endDate) : undefined,
+            query.type,
         )
     }
 
@@ -51,14 +48,8 @@ export class MovementsController {
     getMovementsByProduct(
         @Param('productId') productId: string,
         @CurrentWorkspace() workspace: Workspace,
-        @Query('page') page?: number,
-        @Query('limit') limit?: number,
+        @Query() query: MovementsQueryDto,
     ) {
-        return this.movementsService.findByProduct(
-            productId, 
-            workspace.id,
-            Number(page) || 1,
-            Number(limit) || 10
-        );
+        return this.movementsService.findByProduct(productId, workspace.id, query.page, query.limit)
     }
 }
