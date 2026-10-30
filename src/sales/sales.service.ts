@@ -118,7 +118,7 @@ export class SalesService {
         const whereClause: Prisma.SaleWhereInput = { workspaceId };
 
         if (status && status !== 'ALL') {
-            whereClause.status = status as any;
+            whereClause.status = status;
         }
 
         if (search) {

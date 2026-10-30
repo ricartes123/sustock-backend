@@ -1,5 +1,6 @@
-import { IsOptional, IsInt, Min, IsNumber, IsDateString } from 'class-validator';
+import { IsOptional, IsInt, Min, IsNumber, IsDateString, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
+import { SaleStatus } from '@prisma/client';
 
 export class SalesQueryDto {
   @IsOptional()
@@ -18,7 +19,8 @@ export class SalesQueryDto {
   search?: string;
 
   @IsOptional()
-  status?: string;
+  @IsIn(['ALL', ...Object.values(SaleStatus)])
+  status?: SaleStatus | 'ALL';
 
   @IsOptional()
   @IsDateString()
