@@ -103,7 +103,7 @@ export class DashboardService {
 
             // 7. Recent sales
             this.prisma.sale.findMany({
-                where: { workspaceId },
+                where: { workspaceId, status: { not: SaleStatus.CANCELLED } },
                 include: {
                     client: { select: { name: true } }
                 },
