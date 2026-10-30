@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min, IsNumber, IsDateString, IsIn } from 'class-validator';
+import { IsOptional, IsInt, Min, Max, IsNumber, IsDateString, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SaleStatus } from '@prisma/client';
 
@@ -13,6 +13,7 @@ export class SalesQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(100)
   limit?: number = 10;
 
   @IsOptional()
