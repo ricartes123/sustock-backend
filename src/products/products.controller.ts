@@ -34,8 +34,9 @@ export class ProductsController {
   create(
     @Body() data: CreateProductDto,
     @CurrentWorkspace() workspace: Workspace,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.productsService.create(data, workspace.id)
+    return this.productsService.create(data, workspace.id, user.userId)
   }
 
   @Post(APP_ROUTES.PRODUCTS.IMPORT)
@@ -43,9 +44,10 @@ export class ProductsController {
   importProducts(
     @UploadedFile() file: Express.Multer.File,
     @CurrentWorkspace() workspace: Workspace,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     if (!file) throw new BadRequestException('No se recibió ningún archivo.')
-    return this.productsService.importProducts(file.buffer, workspace.id)
+    return this.productsService.importProducts(file.buffer, workspace.id, user.userId)
   }
 
   @Get()

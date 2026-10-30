@@ -20,7 +20,7 @@ describe('ProductsService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    prisma.product.create.mockImplementation(({ data }) => Promise.resolve(data));
+    prisma.product.create.mockImplementation(({ data }) => Promise.resolve({ id: 'new', stock: 0, ...data }));
     prisma.product.update.mockImplementation(({ data }) => Promise.resolve(data));
     prisma.$transaction.mockImplementation((fn: (tx: typeof prisma) => unknown) => fn(prisma));
   });
@@ -30,16 +30,29 @@ describe('ProductsService', () => {
       prisma.product.findFirst.mockResolvedValue({ name: 'Otro', sku: 'A1', barcode: null });
 
       await expect(
-        service.create({ name: 'Nuevo', sku: 'A1', price: 10, stock: 1 }, 'w1'),
+        service.create({ name: 'Nuevo', sku: 'A1', price: 10, stock: 1 }, 'w1', 'u1'),
       ).rejects.toThrow(ConflictException);
       expect(prisma.product.create).not.toHaveBeenCalled();
     });
 
     it('stores blank codes as null without checking uniqueness', async () => {
-      const product = await service.create({ name: 'Nuevo', sku: '  ', barcode: '', price: 10, stock: 1 }, 'w1');
+      const product = await service.create({ name: 'Nuevo', sku: '  ', barcode: '', price: 10, stock: 1 }, 'w1', 'u1');
 
       expect(prisma.product.findFirst).not.toHaveBeenCalled();
       expect(product).toMatchObject({ sku: null, barcode: null });
+    });
+
+    it('records the initial stock as an IN movement', async () => {
+      await service.create({ name: 'Nuevo', price: 10, stock: 5 }, 'w1', 'u1');
+
+      expect(prisma.movement.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ type: 'IN', quantity: 5, productId: 'new', workspaceId: 'w1', userId: 'u1' }),
+      });
+    });
+
+    it('records no movement when the product starts without stock', async () => {
+      await service.create({ name: 'Nuevo', price: 10, stock: 0 }, 'w1', 'u1');
+      expect(prisma.movement.create).not.toHaveBeenCalled();
     });
   });
 
@@ -111,11 +124,13 @@ describe('ProductsService', () => {
         { Nombre: 'Tres', 'Precio de Venta': '9,99', Stock: '2.5' },
       ]);
 
-      const result = await service.importProducts(buffer, 'w1');
+      const result = await service.importProducts(buffer, 'w1', 'u1');
 
       expect(result.created).toBe(1);
       expect(result.errors.map((e) => e.row)).toEqual([3, 4]);
       expect(prisma.product.create.mock.calls[0][0].data.price.toString()).toBe('1234.56');
+      expect(prisma.movement.create).toHaveBeenCalledTimes(1);
+      expect(prisma.movement.create.mock.calls[0][0].data).toMatchObject({ type: 'IN', quantity: 3, reason: 'Importación' });
     });
   });
 });

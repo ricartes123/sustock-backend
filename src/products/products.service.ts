@@ -11,14 +11,14 @@ import { isBlank, parseMoney, parseNonNegativeInt } from './import-parsers'
 export class ProductsService {
   constructor(private prisma: PrismaService) { }
 
-  async create(data: CreateProductDto, workspaceId: string) {
+  async create(data: CreateProductDto, workspaceId: string, userId: string) {
     const sku = normalizeCode(data.sku)
     const barcode = normalizeCode(data.barcode)
 
     await this.assertCodesAvailable(workspaceId, { sku, barcode })
 
-    return this.prisma.product.create({
-      data: {
+    return this.createWithInitialStock(
+      {
         name: data.name,
         sku,
         barcode,
@@ -28,6 +28,30 @@ export class ProductsService {
         stockMin: data.stockMin,
         workspaceId,
       },
+      userId,
+      'Stock inicial',
+    )
+  }
+
+  // Initial stock must leave a trace in the movement history like any other stock change
+  private createWithInitialStock(data: Prisma.ProductUncheckedCreateInput, userId: string, reason: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.create({ data })
+
+      if (product.stock > 0) {
+        await tx.movement.create({
+          data: {
+            type: MovementType.IN,
+            quantity: product.stock,
+            reason,
+            productId: product.id,
+            workspaceId: product.workspaceId,
+            userId,
+          },
+        })
+      }
+
+      return product
     })
   }
 
@@ -159,7 +183,7 @@ export class ProductsService {
     })
   }
 
-  async importProducts(buffer: Buffer, workspaceId: string) {
+  async importProducts(buffer: Buffer, workspaceId: string, userId: string) {
     let rows: Record<string, unknown>[]
     try {
       const workbook = XLSX.read(buffer, { type: 'buffer' })
@@ -233,18 +257,11 @@ export class ProductsService {
       if (sku) seenSkus.add(sku)
       if (barcode) seenBarcodes.add(barcode)
 
-      await this.prisma.product.create({
-        data: {
-          name,
-          sku,
-          barcode,
-          price,
-          costPrice,
-          stock,
-          stockMin,
-          workspaceId,
-        },
-      })
+      await this.createWithInitialStock(
+        { name, sku, barcode, price, costPrice, stock, stockMin, workspaceId },
+        userId,
+        'Importación',
+      )
       created++
     }
 
