@@ -63,8 +63,8 @@ export class AuthService {
     return this.signToken(user)
   }
 
-  getProfile(userId: string) {
-    return this.prisma.user.findUnique({
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -77,6 +77,13 @@ export class AuthService {
         },
       },
     })
+
+    // A still-valid token can outlive its user
+    if (!user) {
+      throw new UnauthorizedException()
+    }
+
+    return user
   }
 
   private signToken(user: { id: string; email: string }) {
