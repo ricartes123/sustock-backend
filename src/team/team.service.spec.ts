@@ -1,5 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { Prisma, Role } from '@prisma/client';
 import { TeamService } from './team.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -41,6 +41,15 @@ describe('TeamService', () => {
       await expect(
         service.inviteMember('w1', { email: 'a@b.com' }, Role.ADMIN),
       ).resolves.toMatchObject({ role: Role.STAFF });
+    });
+
+    it('answers 409 when a concurrent invite already created the membership', async () => {
+      prisma.teamMember.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', { code: 'P2002', clientVersion: 'test' }),
+      );
+      await expect(
+        service.inviteMember('w1', { email: 'a@b.com' }, Role.ADMIN),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
   });
 

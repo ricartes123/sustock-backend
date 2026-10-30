@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InviteMemberDto } from './dto/invite-member.dto';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 
 @Injectable()
 export class TeamService {
@@ -64,13 +64,21 @@ export class TeamService {
             throw new ConflictException('User is the owner of this workspace');
         }
 
-        return this.prisma.teamMember.create({
-            data: {
-                userId: user.id,
-                workspaceId,
-                role,
-            },
-        });
+        try {
+            return await this.prisma.teamMember.create({
+                data: {
+                    userId: user.id,
+                    workspaceId,
+                    role,
+                },
+            });
+        } catch (error) {
+            // A concurrent invite can pass the check above; the unique index has the last word
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+                throw new ConflictException('User is already a team member of this workspace');
+            }
+            throw error;
+        }
     }
 
     async removeMember(workspaceId: string, memberId: string, actorRole: Role) {
