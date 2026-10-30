@@ -1,10 +1,16 @@
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 import 'dotenv/config';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Render terminates TLS in its proxy; without this req.ip is the proxy's address
+  app.set('trust proxy', true);
+  app.use(helmet());
 
   app.useGlobalPipes(
     new ValidationPipe({

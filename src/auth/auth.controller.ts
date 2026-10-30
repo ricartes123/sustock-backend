@@ -8,12 +8,16 @@ import { CurrentUser } from './current-user.decorator';
 import type { AuthenticatedUser } from './authenticated-user.interface';
 import { AUTH_COOKIE, AUTH_SESSION_TTL_SECONDS, authCookieOptions } from './auth-cookie';
 import { APP_ROUTES } from '../app.routes';
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
+import { LOGIN_THROTTLER, REGISTER_THROTTLER } from './auth-throttle';
 
 @Controller(APP_ROUTES.AUTH.ROOT)
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Post(APP_ROUTES.AUTH.REGISTER)
+  @UseGuards(ThrottlerGuard)
+  @SkipThrottle({ [LOGIN_THROTTLER]: true })
   async register(@Body() data: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { userId, accessToken } = await this.authService.register(data);
     this.setSessionCookie(res, accessToken);
@@ -22,6 +26,8 @@ export class AuthController {
 
   @Post(APP_ROUTES.AUTH.LOGIN)
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @SkipThrottle({ [REGISTER_THROTTLER]: true })
   async login(@Body() data: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { userId, accessToken } = await this.authService.login(data);
     this.setSessionCookie(res, accessToken);
