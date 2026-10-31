@@ -1,12 +1,15 @@
 import { ConflictException } from '@nestjs/common';
-import * as XLSX from 'xlsx';
+import { Workbook } from 'exceljs';
 import { ProductsService } from './products.service';
 import { PrismaService } from '../prisma/prisma.service';
 
-function workbookBuffer(rows: Record<string, unknown>[]): Buffer {
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), 'Productos');
-  return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+async function workbookBuffer(rows: Record<string, unknown>[]): Promise<Buffer> {
+  const workbook = new Workbook();
+  const sheet = workbook.addWorksheet('Productos');
+  const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+  sheet.addRow(headers);
+  rows.forEach((row) => sheet.addRow(headers.map((header) => row[header] ?? null)));
+  return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
 describe('ProductsService', () => {
@@ -118,7 +121,7 @@ describe('ProductsService', () => {
   describe('importProducts', () => {
     it('reports duplicated codes and keeps decimals', async () => {
       prisma.product.findFirst.mockResolvedValue(null);
-      const buffer = workbookBuffer([
+      const buffer = await workbookBuffer([
         { Nombre: 'Uno', SKU: 'X1', 'Precio de Venta': '1.234,56', Stock: 3 },
         { Nombre: 'Dos', SKU: 'X1', 'Precio de Venta': 10, Stock: 1 },
         { Nombre: 'Tres', 'Precio de Venta': '9,99', Stock: '2.5' },

@@ -4,7 +4,7 @@ import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { PaginationDto } from './dto/pagination.dto'
 import { MovementType, Prisma } from '@prisma/client'
-import * as XLSX from 'xlsx'
+import { readSpreadsheetRows } from './spreadsheet-reader'
 import { isBlank, parseMoney, parseNonNegativeInt } from './import-parsers'
 
 @Injectable()
@@ -186,9 +186,7 @@ export class ProductsService {
   async importProducts(buffer: Buffer, workspaceId: string, userId: string) {
     let rows: Record<string, unknown>[]
     try {
-      const workbook = XLSX.read(buffer, { type: 'buffer' })
-      const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
+      rows = await readSpreadsheetRows(buffer)
     } catch {
       throw new BadRequestException('No se pudo leer el archivo. Asegurate de que sea un Excel (.xlsx) o CSV válido.')
     }
