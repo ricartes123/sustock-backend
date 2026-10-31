@@ -18,6 +18,8 @@ import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { WorkspaceGuard } from '../workspace-context/workspace.guard'
+import { RolesGuard } from '../workspace-context/roles.guard'
+import { Roles, ADMIN_ROLES } from '../workspace-context/roles.decorator'
 import { CurrentWorkspace } from '../workspace-context/current-workspace.decorator'
 import { CurrentUser } from '../auth/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface'
@@ -26,10 +28,11 @@ import { PaginationDto } from './dto/pagination.dto'
 import { APP_ROUTES } from '../app.routes'
 
 @Controller(APP_ROUTES.PRODUCTS.ROOT)
-@UseGuards(JwtAuthGuard, WorkspaceGuard)
+@UseGuards(JwtAuthGuard, WorkspaceGuard, RolesGuard)
 export class ProductsController {
   constructor(private productsService: ProductsService) { }
 
+  @Roles(ADMIN_ROLES)
   @Post()
   create(
     @Body() data: CreateProductDto,
@@ -39,6 +42,7 @@ export class ProductsController {
     return this.productsService.create(data, workspace.id, user.userId)
   }
 
+  @Roles(ADMIN_ROLES)
   @Post(APP_ROUTES.PRODUCTS.IMPORT)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
   importProducts(
@@ -66,6 +70,7 @@ export class ProductsController {
     return this.productsService.findOne(id, workspace.id)
   }
 
+  @Roles(ADMIN_ROLES)
   @Patch(APP_ROUTES.PRODUCTS.BY_ID)
   update(
     @Param('id') id: string,
@@ -76,6 +81,7 @@ export class ProductsController {
     return this.productsService.update(id, data, workspace.id, user.userId)
   }
 
+  @Roles(ADMIN_ROLES)
   @Delete(APP_ROUTES.PRODUCTS.BY_ID)
   remove(
     @Param('id') id: string,
@@ -84,6 +90,7 @@ export class ProductsController {
     return this.productsService.remove(id, workspace.id)
   }
 
+  @Roles(ADMIN_ROLES)
   @Post(APP_ROUTES.PRODUCTS.RESTORE)
   restore(
     @Param('id') id: string,
