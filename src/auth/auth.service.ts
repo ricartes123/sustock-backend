@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt'
 import { UnauthorizedException } from '@nestjs/common'
 import { LoginDto } from './dto/login.dto'
+import { findUserByEmail } from './user-email'
 
 const WORKSPACE_SUMMARY = { select: { id: true, name: true, currency: true } } as const
 
@@ -13,9 +14,7 @@ export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService) { }
 
   async register(data: RegisterDto) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: data.email },
-    })
+    const existingUser = await findUserByEmail(this.prisma, data.email)
 
     if (existingUser) {
       throw new BadRequestException('Email already in use')
@@ -43,9 +42,7 @@ export class AuthService {
   }
 
   async login(data: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: data.email },
-    })
+    const user = await findUserByEmail(this.prisma, data.email)
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')

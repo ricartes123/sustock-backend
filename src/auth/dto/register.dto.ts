@@ -1,6 +1,8 @@
 import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional, IsISO4217CurrencyCode } from 'class-validator'
+import { NormalizeEmail } from '../user-email'
 
 export class RegisterDto {
+  @NormalizeEmail()
   @IsEmail()
   email: string
 

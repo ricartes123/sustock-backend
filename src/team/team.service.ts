@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { findUserByEmail } from '../auth/user-email';
 import { InviteMemberDto } from './dto/invite-member.dto';
 import { Prisma, Role } from '@prisma/client';
 
@@ -33,9 +34,7 @@ export class TeamService {
         }
 
         // Find user by email
-        const user = await this.prisma.user.findUnique({
-            where: { email: data.email },
-        });
+        const user = await findUserByEmail(this.prisma, data.email);
 
         if (!user) {
             throw new NotFoundException('User with this email not found');
