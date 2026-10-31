@@ -2,7 +2,7 @@
 
 API REST del sistema de gestión de inventario **SuStock**. Construida con NestJS y PostgreSQL, provee autenticación con sesión en cookie httpOnly, aislamiento multi-tenant por espacio de trabajo, permisos por rol y operaciones transaccionales de stock para productos, ventas, movimientos y clientes.
 
-**Demo en vivo:** https://sustock.vercel.app — usuario `demo@sustock.com`, contraseña `demo1234`
+**Demo en vivo:** https://sustock.vercel.app (credenciales de acceso a pedido)
 
 > La API corre en el plan gratuito de Render, que se suspende tras 15 minutos sin uso: la primera carga puede tardar ~50 segundos.
 
